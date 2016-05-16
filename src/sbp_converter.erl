@@ -1,30 +1,8 @@
 %%
 %% Copyright (c) 2014-2016 Bas Wegh
 %%
-%% Permission is hereby granted, free of charge, to any person obtaining a copy
-%% of this software and associated documentation files (the "Software"), to deal
-%% in the Software without restriction, including without limitation the rights
-%% to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-%% copies of the Software, and to permit persons to whom the Software is
-%% furnished to do so, subject to the following conditions:
-%%
-%% The above copyright notice and this permission notice shall be included in all
-%% copies or substantial portions of the Software.
-%%
-%% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-%% IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-%% FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-%% AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-%% LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-%% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-%% SOFTWARE.
-%%
-%%%-------------------------------------------------------------------
-%%% @doc
-%%%
-%%% @end
-%%%-------------------------------------------------------------------
 -module(sbp_converter).
+-author("Bas Wegh, bwegh@github.com").
 
 -include("sbp_mapping.hrl").
 -include("sbp_message_codes.hrl").
@@ -53,28 +31,40 @@ to_wamp({goodbye, Details, Error}) when is_atom(Error) ->
   to_wamp({goodbye, Details, error_to_wamp(Error)});
 to_wamp({goodbye, Details, Reason}) ->
   [?GOODBYE, dict_to_wamp(Details), Reason];
-to_wamp({error, Origin, RequestId, Details, Error, Arguments, ArgumentsKw}) when is_atom(Error) ->
-  to_wamp({error, Origin, RequestId, Details, error_to_wamp(Error), Arguments, ArgumentsKw});
-to_wamp({error, subscribe, RequestId, Details, Error, Arguments, ArgumentsKw}) ->
-  to_wamp({error, ?SUBSCRIBE, RequestId, Details, Error, Arguments, ArgumentsKw});
-to_wamp({error, unsubscribe, RequestId, Details, Error, Arguments, ArgumentsKw}) ->
-  to_wamp({error, ?UNSUBSCRIBE, RequestId, Details, Error, Arguments, ArgumentsKw});
+to_wamp({error, Origin, RequestId, Details, Error, Arguments, ArgumentsKw})
+  when is_atom(Error) ->
+  to_wamp({error, Origin, RequestId, Details, error_to_wamp(Error), Arguments,
+           ArgumentsKw});
+to_wamp({error, subscribe, RequestId, Details, Error, Arguments,
+         ArgumentsKw}) ->
+  to_wamp({error, ?SUBSCRIBE, RequestId, Details, Error, Arguments,
+           ArgumentsKw});
+to_wamp({error, unsubscribe, RequestId, Details, Error, Arguments,
+         ArgumentsKw}) ->
+  to_wamp({error, ?UNSUBSCRIBE, RequestId, Details, Error, Arguments,
+           ArgumentsKw});
 to_wamp({error, publish, RequestId, Details, Error, Arguments, ArgumentsKw}) ->
   to_wamp({error, ?PUBLISH, RequestId, Details, Error, Arguments, ArgumentsKw});
 to_wamp({error, register, RequestId, Details, Error, Arguments, ArgumentsKw}) ->
-  to_wamp({error, ?REGISTER, RequestId, Details, Error, Arguments, ArgumentsKw});
-to_wamp({error, unregister, RequestId, Details, Error, Arguments, ArgumentsKw}) ->
-  to_wamp({error, ?UNREGISTER, RequestId, Details, Error, Arguments, ArgumentsKw});
+  to_wamp({error, ?REGISTER, RequestId, Details, Error, Arguments,
+           ArgumentsKw});
+to_wamp({error, unregister, RequestId, Details, Error, Arguments,
+         ArgumentsKw}) ->
+  to_wamp({error, ?UNREGISTER, RequestId, Details, Error, Arguments,
+           ArgumentsKw});
 to_wamp({error, call, RequestId, Details, Error, Arguments, ArgumentsKw}) ->
   to_wamp({error, ?CALL, RequestId, Details, Error, Arguments, ArgumentsKw});
-to_wamp({error, invocation, RequestId, Details, Error, Arguments, ArgumentsKw}) ->
-  to_wamp({error, ?INVOCATION, RequestId, Details, Error, Arguments, ArgumentsKw});
+to_wamp({error, invocation, RequestId, Details, Error, Arguments,
+         ArgumentsKw}) ->
+  to_wamp({error, ?INVOCATION, RequestId, Details, Error, Arguments,
+           ArgumentsKw});
 to_wamp({error, Origin, RequestId, Details, Reason, undefined, undefined}) ->
   [?ERROR, Origin, RequestId, dict_to_wamp(Details), Reason];
 to_wamp({error, Origin, RequestId, Details, Reason, Arguments, undefined}) ->
   [?ERROR, Origin, RequestId, dict_to_wamp(Details), Reason, Arguments];
 to_wamp({error, Origin, RequestId, Details, Reason, Arguments, ArgumentsKw}) ->
-  [?ERROR, Origin, RequestId, dict_to_wamp(Details), Reason, Arguments, ArgumentsKw];
+  [?ERROR, Origin, RequestId, dict_to_wamp(Details), Reason, Arguments,
+   ArgumentsKw];
 to_wamp({publish, RequestId, Options, Topic, undefined, undefined}) ->
   [?PUBLISH, RequestId, dict_to_wamp(Options), Topic];
 to_wamp({publish, RequestId, Options, Topic, Arguments, undefined}) ->
@@ -91,12 +81,16 @@ to_wamp({unsubscribe, RequestId, SubscriptionId}) ->
   [?UNSUBSCRIBE, RequestId, SubscriptionId];
 to_wamp({unsubscribed, RequestId}) ->
   [?UNSUBSCRIBED, RequestId];
-to_wamp({event, SubscriptionId, PublicationId, Details, undefined, undefined}) ->
+to_wamp({event, SubscriptionId, PublicationId, Details, undefined,
+         undefined}) ->
   [?EVENT, SubscriptionId, PublicationId, dict_to_wamp(Details)];
-to_wamp({event, SubscriptionId, PublicationId, Details, Arguments, undefined}) ->
+to_wamp({event, SubscriptionId, PublicationId, Details, Arguments,
+         undefined}) ->
   [?EVENT, SubscriptionId, PublicationId, dict_to_wamp(Details), Arguments];
-to_wamp({event, SubscriptionId, PublicationId, Details, Arguments, ArgumentsKw}) ->
-  [?EVENT, SubscriptionId, PublicationId, dict_to_wamp(Details), Arguments, ArgumentsKw];
+to_wamp({event, SubscriptionId, PublicationId, Details, Arguments,
+         ArgumentsKw}) ->
+  [?EVENT, SubscriptionId, PublicationId, dict_to_wamp(Details), Arguments,
+   ArgumentsKw];
 to_wamp({call, RequestId, Options, Procedure, undefined, undefined}) ->
   [?CALL, RequestId, dict_to_wamp(Options), Procedure];
 to_wamp({call, RequestId, Options, Procedure, Arguments, undefined}) ->
@@ -119,12 +113,16 @@ to_wamp({unregister, RequestId, RegistrationId}) ->
   [?UNREGISTER, RequestId, RegistrationId];
 to_wamp({unregistered, RequestId}) ->
   [?UNREGISTERED, RequestId];
-to_wamp({invocation, RequestId, RegistrationId, Details, undefined, undefined}) ->
+to_wamp({invocation, RequestId, RegistrationId, Details, undefined,
+         undefined}) ->
   [?INVOCATION, RequestId, RegistrationId, dict_to_wamp(Details)];
-to_wamp({invocation, RequestId, RegistrationId, Details, Arguments, undefined}) ->
+to_wamp({invocation, RequestId, RegistrationId, Details, Arguments,
+         undefined}) ->
   [?INVOCATION, RequestId, RegistrationId, dict_to_wamp(Details), Arguments];
-to_wamp({invocation, RequestId, RegistrationId, Details, Arguments, ArgumentsKw}) ->
-  [?INVOCATION, RequestId, RegistrationId, dict_to_wamp(Details), Arguments, ArgumentsKw];
+to_wamp({invocation, RequestId, RegistrationId, Details, Arguments,
+         ArgumentsKw}) ->
+  [?INVOCATION, RequestId, RegistrationId, dict_to_wamp(Details), Arguments,
+   ArgumentsKw];
 to_wamp({interrupt, RequestId, Options}) ->
   [?INTERRUPT, RequestId, dict_to_wamp(Options)];
 to_wamp({yield, RequestId, Options, undefined, undefined}) ->
@@ -168,10 +166,13 @@ to_erl([?HEARTBEAT, IncomingSeq, OutgoingSeq, _Discard]) ->
 to_erl([?HEARTBEAT, IncomingSeq, OutgoingSeq]) ->
   {heartbeat, IncomingSeq, OutgoingSeq};
 to_erl([?ERROR, RequestType, RequestId, Details, Error]) ->
-  to_erl([?ERROR, RequestType, RequestId, Details, Error, undefined, undefined]);
+  to_erl([?ERROR, RequestType, RequestId, Details, Error, undefined,
+          undefined]);
 to_erl([?ERROR, RequestType, RequestId, Details, Error, Arguments]) ->
-  to_erl([?ERROR, RequestType, RequestId, Details, Error, Arguments, undefined]);
-to_erl([?ERROR, RequestType, RequestId, Details, Error, Arguments, ArgumentsKw]) when is_binary(Error) ->
+  to_erl([?ERROR, RequestType, RequestId, Details, Error, Arguments,
+          undefined]);
+to_erl([?ERROR, RequestType, RequestId, Details, Error, Arguments, ArgumentsKw])
+  when is_binary(Error) ->
   true = sbp_validator:is_valid_id(RequestId),
   true = sbp_validator:is_valid_dict(Details),
   true = sbp_validator:is_valid_arguments(Arguments),
@@ -185,7 +186,8 @@ to_erl([?ERROR, RequestType, RequestId, Details, Error, Arguments, ArgumentsKw])
               ?CALL -> call;
               ?INVOCATION -> invocation
             end,
-  {error, ErlType, RequestId, Details, try_error_to_erl(Error), Arguments, ArgumentsKw};
+  {error, ErlType, RequestId, Details, try_error_to_erl(Error), Arguments,
+   ArgumentsKw};
 to_erl([?PUBLISH, RequestId, Options, Topic]) ->
   to_erl([?PUBLISH, RequestId, Options, Topic, undefined, undefined]);
 to_erl([?PUBLISH, RequestId, Options, Topic, Arguments]) ->
@@ -218,16 +220,20 @@ to_erl([?UNSUBSCRIBED, RequestId]) ->
   true = sbp_validator:is_valid_id(RequestId),
   {unsubscribed, RequestId};
 to_erl([?EVENT, SubscriptionId, PublicationId, Details]) ->
-  to_erl([?EVENT, SubscriptionId, PublicationId, Details, undefined, undefined]);
+  to_erl([?EVENT, SubscriptionId, PublicationId, Details, undefined,
+          undefined]);
 to_erl([?EVENT, SubscriptionId, PublicationId, Details, Arguments]) ->
-  to_erl([?EVENT, SubscriptionId, PublicationId, Details, Arguments, undefined]);
-to_erl([?EVENT, SubscriptionId, PublicationId, Details, Arguments, ArgumentsKw]) ->
+  to_erl([?EVENT, SubscriptionId, PublicationId, Details, Arguments,
+          undefined]);
+to_erl([?EVENT, SubscriptionId, PublicationId, Details, Arguments,
+        ArgumentsKw]) ->
   true = sbp_validator:is_valid_id(SubscriptionId),
   true = sbp_validator:is_valid_id(PublicationId),
   true = sbp_validator:is_valid_dict(Details),
   true = sbp_validator:is_valid_arguments(Arguments),
   true = sbp_validator:is_valid_argumentskw(ArgumentsKw),
-  {event, SubscriptionId, PublicationId, dict_to_erl(Details), Arguments, ArgumentsKw};
+  {event, SubscriptionId, PublicationId, dict_to_erl(Details), Arguments,
+   ArgumentsKw};
 to_erl([?CALL, RequestId, Options, Procedure]) ->
   to_erl([?CALL, RequestId, Options, Procedure, undefined, undefined]);
 to_erl([?CALL, RequestId, Options, Procedure, Arguments]) ->
@@ -267,16 +273,20 @@ to_erl([?UNREGISTERED, RequestId]) ->
   true = sbp_validator:is_valid_id(RequestId),
   {unregistered, RequestId};
 to_erl([?INVOCATION, RequestId, RegistrationId, Details]) ->
-  to_erl([?INVOCATION, RequestId, RegistrationId, Details, undefined, undefined]);
+  to_erl([?INVOCATION, RequestId, RegistrationId, Details, undefined,
+          undefined]);
 to_erl([?INVOCATION, RequestId, RegistrationId, Details, Arguments]) ->
-  to_erl([?INVOCATION, RequestId, RegistrationId, Details, Arguments, undefined]);
-to_erl([?INVOCATION, RequestId, RegistrationId, Details, Arguments, ArgumentsKw]) ->
+  to_erl([?INVOCATION, RequestId, RegistrationId, Details, Arguments,
+          undefined]);
+to_erl([?INVOCATION, RequestId, RegistrationId, Details, Arguments,
+        ArgumentsKw]) ->
   true = sbp_validator:is_valid_id(RequestId),
   true = sbp_validator:is_valid_id(RegistrationId),
   true = sbp_validator:is_valid_dict(Details),
   true = sbp_validator:is_valid_arguments(Arguments),
   true = sbp_validator:is_valid_argumentskw(ArgumentsKw),
-  {invocation, RequestId, RegistrationId, dict_to_erl(Details), Arguments, ArgumentsKw};
+  {invocation, RequestId, RegistrationId, dict_to_erl(Details), Arguments,
+   ArgumentsKw};
 to_erl([?INTERRUPT, RequestId, Options]) ->
   true = sbp_validator:is_valid_dict(Options),
   {interrupt, RequestId, dict_to_erl(Options)};

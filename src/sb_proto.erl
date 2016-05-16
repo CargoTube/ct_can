@@ -1,34 +1,18 @@
 %%
-%% Copyright (c) 2014-2015 Bas Wegh
-%%
-%% Permission is hereby granted, free of charge, to any person obtaining a copy
-%% of this software and associated documentation files (the "Software"), to deal
-%% in the Software without restriction, including without limitation the rights
-%% to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-%% copies of the Software, and to permit persons to whom the Software is
-%% furnished to do so, subject to the following conditions:
-%%
-%% The above copyright notice and this permission notice shall be included in all
-%% copies or substantial portions of the Software.
-%%
-%% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-%% IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-%% FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-%% AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-%% LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-%% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-%% SOFTWARE.
+%% Copyright (c) 2014-2016 Bas Wegh
 %%
 
 %% @private
 -module(sb_proto).
+-author("Bas Wegh, bwegh@github.com").
 
 -export([deserialize/2, serialize/2]).
 
 -define(JSONB_SEPARATOR, <<24>>).
 
 deserialize(Buffer, Encoding) ->
-  case lists:member(Encoding, [raw_msgpack, raw_json, msgpack_batched, raw_erlbin]) of
+  case lists:member(Encoding, [raw_msgpack, raw_json, msgpack_batched,
+                               raw_erlbin]) of
     true -> deserialize_binary(Buffer, [], Encoding);
     _ -> deserialize_text(Buffer, [], Encoding)
   end.
@@ -42,8 +26,9 @@ serialize(Erwa, Enc) ->
 
 
 %% @private
--spec deserialize_text(Buffer :: binary(), Messages :: list(), Encoding :: atom()) ->
-  {[Message :: term()], NewBuffer :: binary()}.
+-spec deserialize_text(Buffer :: binary(), Messages :: list(),
+                       Encoding :: atom()) -> {[Message :: term()],
+                                               NewBuffer :: binary()}.
 deserialize_text(Buffer, Messages, erlbin) ->
   Msg = binary_to_term(Buffer),
   true = sbp_validator:is_valid_message(Msg),
@@ -60,17 +45,21 @@ deserialize_text(Buffer, Messages, msgpack) ->
 deserialize_text(Buffer, Messages, json) ->
   %% is it possible to check the data here ?
   %% length and stuff, yet should not be needed
-  {[sbp_converter:to_erl(jsx:decode(Buffer, [return_maps])) | Messages], <<"">>};
+  {[sbp_converter:to_erl(jsx:decode(Buffer, [return_maps])) | Messages],
+   <<"">>};
 deserialize_text(Buffer, _Messages, json_batched) ->
   Wamps = binary:split(Buffer, [?JSONB_SEPARATOR], [global, trim]),
-  {to_erl_reverse(lists:foldl(fun(M, List) -> [jsx:decode(M, [return_maps]) | List] end, [], Wamps)), <<"">>};
+  {to_erl_reverse(lists:foldl(fun(M, List) -> [jsx:decode(M, [return_maps]) |
+                                               List] end, [], Wamps)), <<"">>};
 deserialize_text(Buffer, Messages, _) ->
   {to_erl_reverse(Messages), Buffer}.
 
 %% @private
--spec deserialize_binary(Buffer :: binary(), Messages :: list(), Encoding :: atom()) ->
+-spec deserialize_binary(Buffer :: binary(), Messages :: list(),
+                         Encoding :: atom()) ->
   {[Message :: term()], NewBuffer :: binary()}.
-deserialize_binary(<<LenType:32/unsigned-integer-big, Data/binary>> = Buffer, Messages, Enc) ->
+deserialize_binary(<<LenType:32/unsigned-integer-big, Data/binary>> = Buffer,
+                   Messages, Enc) ->
   <<Type:8, Len:24>> = <<LenType:32>>,
   case {Type, byte_size(Data) >= Len} of
     {0, true} ->
@@ -125,7 +114,7 @@ serialize_message(Message, raw_erlbin) ->
   Enc = term_to_binary(Message),
   add_binary_frame(Enc);
 serialize_message(Message, raw_msgpack) ->
-    Enc = case msgpack:pack(Message, [{format, map},{allow_atom, pack}]) of
+    Enc = case msgpack:pack(Message, [{format, map}, {allow_atom, pack}]) of
           {error, Reason} ->
             error(Reason);
           Msg ->

@@ -1,26 +1,8 @@
 %%
 %% Copyright (c) 2015-2016 Bas Wegh
 %%
-%% Permission is hereby granted, free of charge, to any person obtaining a copy
-%% of this software and associated documentation files (the "Software"), to deal
-%% in the Software without restriction, including without limitation the rights
-%% to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-%% copies of the Software, and to permit persons to whom the Software is
-%% furnished to do so, subject to the following conditions:
-%%
-%% The above copyright notice and this permission notice shall be included in all
-%% copies or substantial portions of the Software.
-%%
-%% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-%% IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-%% FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-%% AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-%% LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-%% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-%% SOFTWARE.
-%%
-
 -module(sbp_auth).
+-author("Bas Wegh, bwegh@github.com").
 
 -export([wamp_cra/2]).
 -export([pbkdf2/4]).
@@ -31,7 +13,8 @@
 -endif.
 
 
-%% @doc calculates the cryptographic hash of the challenge by using the secret key.
+%% @doc calculates the cryptographic hash of the challenge by using the
+%% secret key.
 -spec wamp_cra(Key :: binary(), Challenge :: binary()) -> binary().
 wamp_cra(Key, Challenge) ->
   Bin = crypto:hmac(sha256, Key, Challenge),
@@ -44,14 +27,20 @@ wamp_cra(Key, Challenge) ->
 pbkdf2(SecretKey, Salt, Iterations, Length) ->
   pbkdf2:pbkdf2(SecretKey, Salt, Iterations, Length).
 
--spec create_wampcra_challenge(AuthProvider :: binary(), AuthId :: binary(), Authrole :: binary(),
-    Session :: non_neg_integer()) -> {ok, Challenge :: binary(), calendar:timestamp()}.
+-spec create_wampcra_challenge(AuthProvider :: binary(), AuthId :: binary(),
+                               Authrole :: binary(),
+    Session :: non_neg_integer()) -> {ok, Challenge :: binary(),
+                                      calendar:timestamp()}.
 create_wampcra_challenge(AuthProvider, AuthId, Authrole, Session) ->
   Now = os:timestamp(),
-  {{Year, Month, Day}, {Hour, Minute, Seconds}} = calendar:now_to_universal_time(Now),
+  {{Year, Month, Day},
+   {Hour, Minute, Seconds}} = calendar:now_to_universal_time(Now),
   Timestamp = list_to_binary(
-    io_lib:format("~.10B-~2.10.0B-~2.10.0BT~2.10.0B:~2.10.0B:~2.10.0B.000Z", [Year, Month, Day, Hour, Minute, Seconds])),
-  Challenge = jsx:encode([{<<"nonce">>, nonce()}, {<<"authprovider">>, AuthProvider},
+                io_lib:format(
+                  "~.10B-~2.10.0B-~2.10.0BT~2.10.0B:~2.10.0B:~2.10.0B.000Z",
+                  [Year, Month, Day, Hour, Minute, Seconds])),
+  Challenge = jsx:encode([{<<"nonce">>, nonce()},
+                          {<<"authprovider">>, AuthProvider},
     {<<"authid">>, AuthId}, {<<"timestamp">>, Timestamp},
     {<<"authrole">>, Authrole}, {<<"authmethod">>, <<"wampcra">>},
     {<<"session">>, Session}]),

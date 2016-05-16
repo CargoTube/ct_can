@@ -1,5 +1,21 @@
-PROJECT = sb_proto
-PROJECT_DESCRIPTION = New project
-PROJECT_VERSION = 0.0.1
+REBAR = $(shell pwd)/rebar3
+APP=sb_core
 
-include erlang.mk
+.PHONY: all ct test clean elvis compile 
+
+all: compile
+
+clean:
+	$(REBAR) clean
+
+eunit:
+	$(REBAR) eunit
+
+ct:
+	$(REBAR) ct
+
+elvis:
+	$(REBAR) lint
+
+compile:
+	$(REBAR) compile

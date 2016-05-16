@@ -1,30 +1,8 @@
 %%
-%% Copyright (c) 2014-2015 Bas Wegh
+%% Copyright (c) 2014-2016 Bas Wegh
 %%
-%% Permission is hereby granted, free of charge, to any person obtaining a copy
-%% of this software and associated documentation files (the "Software"), to deal
-%% in the Software without restriction, including without limitation the rights
-%% to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-%% copies of the Software, and to permit persons to whom the Software is
-%% furnished to do so, subject to the following conditions:
-%%
-%% The above copyright notice and this permission notice shall be included in all
-%% copies or substantial portions of the Software.
-%%
-%% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-%% IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-%% FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-%% AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-%% LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-%% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-%% SOFTWARE.
-%%
-%%%-------------------------------------------------------------------
-%%% @doc
-%%%
-%%% @end
-%%%-------------------------------------------------------------------
 -module(sbp_validator).
+-author("Bas Wegh, bwegh@github.com").
 
 %% API
 -export([
@@ -65,10 +43,13 @@ is_valid_message({heartbeat, IncomingSeq, OutgoingSeq}) ->
   true = is_integer(OutgoingSeq),
   true;
 is_valid_message({error, MsgType, RequestId, Details, Error}) ->
-  is_valid_message({error, MsgType, RequestId, Details, Error, undefined, undefined});
+  is_valid_message({error, MsgType, RequestId, Details, Error, undefined,
+                    undefined});
 is_valid_message({error, MsgType, RequestId, Details, Error, Arguments}) ->
-  is_valid_message({error, MsgType, RequestId, Details, Error, Arguments, undefined});
-is_valid_message({error, MsgType, RequestId, Details, Error, Arguments, ArgumentsKw}) ->
+  is_valid_message({error, MsgType, RequestId, Details, Error, Arguments,
+                    undefined});
+is_valid_message({error, MsgType, RequestId, Details, Error, Arguments,
+                  ArgumentsKw}) ->
   true = case MsgType of
            subscribe -> true;
            unsubscribe -> true;
@@ -88,7 +69,8 @@ is_valid_message({publish, RequestId, Options, Topic}) ->
   is_valid_message({publish, RequestId, Options, Topic, undefined, undefined});
 is_valid_message({publish, RequestId, Options, Topic, Arguments}) ->
   is_valid_message({publish, RequestId, Options, Topic, Arguments, undefined});
-is_valid_message({publish, RequestId, Options, Topic, Arguments, ArgumentsKw}) ->
+is_valid_message({publish, RequestId, Options, Topic, Arguments,
+                  ArgumentsKw}) ->
   true = is_valid_id(RequestId),
   true = is_valid_dict(Options),
   true = is_valid_uri(Topic),
@@ -115,10 +97,13 @@ is_valid_message({unsubscribed, RequestId}) ->
   true = is_valid_id(RequestId),
   true;
 is_valid_message({event, SubscriptionId, PublicationId, Details}) ->
-  is_valid_message({event, SubscriptionId, PublicationId, Details, undefined, undefined});
+  is_valid_message({event, SubscriptionId, PublicationId, Details, undefined,
+                    undefined});
 is_valid_message({event, SubscriptionId, PublicationId, Details, Arguments}) ->
-  is_valid_message({event, SubscriptionId, PublicationId, Details, Arguments, undefined});
-is_valid_message({event, SubscriptionId, PublicationId, Details, Arguments, ArgumentsKw}) ->
+  is_valid_message({event, SubscriptionId, PublicationId, Details, Arguments,
+                    undefined});
+is_valid_message({event, SubscriptionId, PublicationId, Details, Arguments,
+                  ArgumentsKw}) ->
   true = is_valid_id(SubscriptionId),
   true = is_valid_id(PublicationId),
   true = is_valid_dict(Details),
@@ -128,7 +113,8 @@ is_valid_message({call, RequestId, Options, Procedure}) ->
   is_valid_message({call, RequestId, Options, Procedure, undefined, undefined});
 is_valid_message({call, RequestId, Options, Procedure, Arguments}) ->
   is_valid_message({call, RequestId, Options, Procedure, Arguments, undefined});
-is_valid_message({call, RequestId, Options, Procedure, Arguments, ArgumentsKw}) ->
+is_valid_message({call, RequestId, Options, Procedure, Arguments,
+                  ArgumentsKw}) ->
   true = is_valid_id(RequestId),
   true = is_valid_dict(Options),
   true = is_valid_uri(Procedure),
@@ -164,10 +150,13 @@ is_valid_message({unregistered, RequestId}) ->
   true = is_valid_id(RequestId),
   true;
 is_valid_message({invocation, RequestId, RegistrationId, Details}) ->
-  is_valid_message({invocation, RequestId, RegistrationId, Details, undefined, undefined});
+  is_valid_message({invocation, RequestId, RegistrationId, Details, undefined,
+                    undefined});
 is_valid_message({invocation, RequestId, RegistrationId, Details, Arguments}) ->
-  is_valid_message({invocation, RequestId, RegistrationId, Details, Arguments, undefined});
-is_valid_message({invocation, RequestId, RegistrationId, Details, Arguments, ArgumentsKw}) ->
+  is_valid_message({invocation, RequestId, RegistrationId, Details, Arguments,
+                    undefined});
+is_valid_message({invocation, RequestId, RegistrationId, Details, Arguments,
+                  ArgumentsKw}) ->
   true = is_valid_id(RequestId),
   true = is_valid_id(RegistrationId),
   true = is_valid_dict(Details),
