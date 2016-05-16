@@ -138,51 +138,42 @@ to_wamp(noreply) ->
 to_wamp(shutdown) ->
     shutdown.
 
-to_erl([?HELLO, Realm, Details]) ->
-    true = sbp_validator:is_valid_uri(Realm),
-    true = sbp_validator:is_valid_dict(Details),
+to_erl(WampMsg) ->
+    ErlMsg = msg_to_erl(WampMsg),
+    true = sbp_validator:is_valid_message(ErlMsg),
+    ErlMsg.
+
+msg_to_erl([?HELLO, Realm, Details]) ->
     #{type => hello, realm => Realm, details => hello_dict_to_erl(Details)};
-to_erl([?WELCOME, SessionId, Details]) ->
-    true = sbp_validator:is_valid_id(SessionId),
-    true = sbp_validator:is_valid_dict(Details),
+msg_to_erl([?WELCOME, SessionId, Details]) ->
     #{type => welcome, session_id => SessionId,
       details => dict_to_erl(Details)};
-to_erl([?ABORT, Details, Reason]) ->
-    true = sbp_validator:is_valid_dict(Details),
-    true = sbp_validator:is_valid_uri(Reason),
+msg_to_erl([?ABORT, Details, Reason]) ->
     #{type => abort, details => dict_to_erl(Details),
       reason => try_error_to_erl(Reason)};
-to_erl([?CHALLENGE, <<"wampcra">>, Extra]) ->
-    to_erl([?CHALLENGE, wampcra, Extra]);
-to_erl([?CHALLENGE, AuthMethod, Extra]) ->
-    true = sbp_validator:is_valid_dict(Extra),
+msg_to_erl([?CHALLENGE, <<"wampcra">>, Extra]) ->
+    msg_to_erl([?CHALLENGE, wampcra, Extra]);
+msg_to_erl([?CHALLENGE, AuthMethod, Extra]) ->
     #{type => challenge, auth_method => AuthMethod,
       extra => dict_to_erl(Extra)};
-to_erl([?AUTHENTICATE, Signature, Extra]) ->
-    true = sbp_validator:is_valid_dict(Extra),
+msg_to_erl([?AUTHENTICATE, Signature, Extra]) ->
     #{type => authenticate, signature => Signature,
       extra => dict_to_erl(Extra)};
-to_erl([?GOODBYE, Details, Error]) when is_binary(Error) ->
-    to_erl([?GOODBYE, Details, error_to_erl(Error)]);
-to_erl([?GOODBYE, Details, Reason]) ->
-    true = sbp_validator:is_valid_dict(Details),
+msg_to_erl([?GOODBYE, Details, Error]) when is_binary(Error) ->
+    msg_to_erl([?GOODBYE, Details, error_to_erl(Error)]);
+msg_to_erl([?GOODBYE, Details, Reason]) ->
     #{type => goodbye, details => dict_to_erl(Details), reason => Reason};
-to_erl([?HEARTBEAT, IncomingSeq, OutgoingSeq, _Discard]) ->
-    to_erl([?HEARTBEAT, IncomingSeq, OutgoingSeq]);
-to_erl([?HEARTBEAT, IncomingSeq, OutgoingSeq]) ->
+msg_to_erl([?HEARTBEAT, IncomingSeq, OutgoingSeq, _Discard]) ->
+    msg_to_erl([?HEARTBEAT, IncomingSeq, OutgoingSeq]);
+msg_to_erl([?HEARTBEAT, IncomingSeq, OutgoingSeq]) ->
     #{type => heartbeat, seq_in => IncomingSeq, seq_out => OutgoingSeq};
-to_erl([?ERROR, RequestType, RequestId, Details, Error]) ->
-    to_erl([?ERROR, RequestType, RequestId, Details, Error, undefined,
+msg_to_erl([?ERROR, RequestType, RequestId, Details, Error]) ->
+    msg_to_erl([?ERROR, RequestType, RequestId, Details, Error, undefined,
             undefined]);
-to_erl([?ERROR, RequestType, RequestId, Details, Error, Arguments]) ->
-    to_erl([?ERROR, RequestType, RequestId, Details, Error, Arguments,
+msg_to_erl([?ERROR, RequestType, RequestId, Details, Error, Arguments]) ->
+    msg_to_erl([?ERROR, RequestType, RequestId, Details, Error, Arguments,
             undefined]);
-to_erl([?ERROR, RequestType, RequestId, Details, Error, Arguments, ArgumentsKw])
-  when is_binary(Error) ->
-    true = sbp_validator:is_valid_id(RequestId),
-    true = sbp_validator:is_valid_dict(Details),
-    true = sbp_validator:is_valid_arguments(Arguments),
-    true = sbp_validator:is_valid_argumentskw(ArgumentsKw),
+msg_to_erl([?ERROR, RequestType, RequestId, Details, Error, Arguments, ArgumentsKw]) ->
     ErlType = case RequestType of
                   ?SUBSCRIBE -> subscribe;
                   ?UNSUBSCRIBE -> unsubscribe;
@@ -192,130 +183,84 @@ to_erl([?ERROR, RequestType, RequestId, Details, Error, Arguments, ArgumentsKw])
                   ?CALL -> call;
                   ?INVOCATION -> invocation
               end,
-    #{type => error, req_type => ErlType, req_id => RequestId,
+    #{type => error, req_type => ErlType, request_id => RequestId,
       details => Details,
       error => try_error_to_erl(Error), arguments => Arguments,
       arguments_kw => ArgumentsKw};
-to_erl([?PUBLISH, RequestId, Options, Topic]) ->
+msg_to_erl([?PUBLISH, RequestId, Options, Topic]) ->
     to_erl([?PUBLISH, RequestId, Options, Topic, undefined, undefined]);
-to_erl([?PUBLISH, RequestId, Options, Topic, Arguments]) ->
+msg_to_erl([?PUBLISH, RequestId, Options, Topic, Arguments]) ->
     to_erl([?PUBLISH, RequestId, Options, Topic, Arguments, undefined]);
-to_erl([?PUBLISH, RequestId, Options, Topic, Arguments, ArgumentsKw]) ->
-    true = sbp_validator:is_valid_id(RequestId),
-    true = sbp_validator:is_valid_dict(Options),
-    true = sbp_validator:is_valid_uri(Topic),
-    true = sbp_validator:is_valid_arguments(Arguments),
-    true = sbp_validator:is_valid_argumentskw(ArgumentsKw),
-    #{type => publish,  req_id => RequestId, options => dict_to_erl(Options),
+msg_to_erl([?PUBLISH, RequestId, Options, Topic, Arguments, ArgumentsKw]) ->
+    #{type => publish,  request_id => RequestId, options => dict_to_erl(Options),
       topic => Topic, arguments => Arguments, arguments_kw => ArgumentsKw};
-to_erl([?PUBLISHED, RequestId, PublicationId]) ->
-    true = sbp_validator:is_valid_id(RequestId),
-    true = sbp_validator:is_valid_id(PublicationId),
-    #{type => published, req_id => RequestId, pub_id => PublicationId};
-to_erl([?SUBSCRIBE, RequestId, Options, Topic]) ->
-    true = sbp_validator:is_valid_id(RequestId),
-    true = sbp_validator:is_valid_dict(Options),
-    true = sbp_validator:is_valid_uri(Topic),
-    #{type => subscribe, req_id => RequestId, options => dict_to_erl(Options),
+msg_to_erl([?PUBLISHED, RequestId, PublicationId]) ->
+    #{type => published, request_id => RequestId, publication_id => PublicationId};
+msg_to_erl([?SUBSCRIBE, RequestId, Options, Topic]) ->
+    #{type => subscribe, request_id => RequestId, options => dict_to_erl(Options),
       topic => Topic};
-to_erl([?SUBSCRIBED, RequestId, SubscriptionId]) ->
-    true = sbp_validator:is_valid_id(RequestId),
-    true = sbp_validator:is_valid_id(SubscriptionId),
-    #{type => subscribed, req_id => RequestId, sub_id => SubscriptionId};
-to_erl([?UNSUBSCRIBE, RequestId, SubscriptionId]) ->
-    true = sbp_validator:is_valid_id(RequestId),
-    true = sbp_validator:is_valid_id(SubscriptionId),
-    #{type => unsubscribe, req_id => RequestId, sub_id => SubscriptionId};
-to_erl([?UNSUBSCRIBED, RequestId]) ->
-    true = sbp_validator:is_valid_id(RequestId),
-    #{type => unsubscribed, req_id => RequestId};
-to_erl([?EVENT, SubscriptionId, PublicationId, Details]) ->
-    to_erl([?EVENT, SubscriptionId, PublicationId, Details, undefined,
+msg_to_erl([?SUBSCRIBED, RequestId, SubscriptionId]) ->
+    #{type => subscribed, request_id => RequestId, sub_id => SubscriptionId};
+msg_to_erl([?UNSUBSCRIBE, RequestId, SubscriptionId]) ->
+    #{type => unsubscribe, request_id => RequestId, sub_id => SubscriptionId};
+msg_to_erl([?UNSUBSCRIBED, RequestId]) ->
+    #{type => unsubscribed, request_id => RequestId};
+msg_to_erl([?EVENT, SubscriptionId, PublicationId, Details]) ->
+    msg_to_erl([?EVENT, SubscriptionId, PublicationId, Details, undefined,
             undefined]);
-to_erl([?EVENT, SubscriptionId, PublicationId, Details, Arguments]) ->
-    to_erl([?EVENT, SubscriptionId, PublicationId, Details, Arguments,
+msg_to_erl([?EVENT, SubscriptionId, PublicationId, Details, Arguments]) ->
+    msg_to_erl([?EVENT, SubscriptionId, PublicationId, Details, Arguments,
             undefined]);
-to_erl([?EVENT, SubscriptionId, PublicationId, Details, Arguments,
+msg_to_erl([?EVENT, SubscriptionId, PublicationId, Details, Arguments,
         ArgumentsKw]) ->
-    true = sbp_validator:is_valid_id(SubscriptionId),
-    true = sbp_validator:is_valid_id(PublicationId),
-    true = sbp_validator:is_valid_dict(Details),
-    true = sbp_validator:is_valid_arguments(Arguments),
-    true = sbp_validator:is_valid_argumentskw(ArgumentsKw),
-    #{type => event, sub_id => SubscriptionId, pub_id => PublicationId,
+    #{type => event, sub_id => SubscriptionId, publication_id => PublicationId,
       details => dict_to_erl(Details), arguments => Arguments,
       arguments_kw => ArgumentsKw};
-to_erl([?CALL, RequestId, Options, Procedure]) ->
+msg_to_erl([?CALL, RequestId, Options, Procedure]) ->
     to_erl([?CALL, RequestId, Options, Procedure, undefined, undefined]);
-to_erl([?CALL, RequestId, Options, Procedure, Arguments]) ->
+msg_to_erl([?CALL, RequestId, Options, Procedure, Arguments]) ->
     to_erl([?CALL, RequestId, Options, Procedure, Arguments, undefined]);
-to_erl([?CALL, RequestId, Options, Procedure, Arguments, ArgumentsKw]) ->
-    true = sbp_validator:is_valid_id(RequestId),
-    true = sbp_validator:is_valid_dict(Options),
-    true = sbp_validator:is_valid_uri(Procedure),
-    true = sbp_validator:is_valid_arguments(Arguments),
-    true = sbp_validator:is_valid_argumentskw(ArgumentsKw),
-    #{type => call, req_id => RequestId, options => dict_to_erl(Options),
+msg_to_erl([?CALL, RequestId, Options, Procedure, Arguments, ArgumentsKw]) ->
+    #{type => call, request_id => RequestId, options => dict_to_erl(Options),
       procedure => Procedure, arguments => Arguments,
       arguments_kw => ArgumentsKw};
-to_erl([?CANCEL, RequestId, Options]) ->
-    true = sbp_validator:is_valid_dict(Options),
-    #{type => cancel, req_id => RequestId, options => dict_to_erl(Options)};
-to_erl([?RESULT, RequestId, Details]) ->
-    to_erl([?RESULT, RequestId, Details, undefined, undefined]);
-to_erl([?RESULT, RequestId, Details, Arguments]) ->
+msg_to_erl([?CANCEL, RequestId, Options]) ->
+    #{type => cancel, request_id => RequestId, options => dict_to_erl(Options)};
+msg_to_erl([?RESULT, RequestId, Details]) ->
+    msg_to_erl([?RESULT, RequestId, Details, undefined, undefined]);
+msg_to_erl([?RESULT, RequestId, Details, Arguments]) ->
     to_erl([?RESULT, RequestId, Details, Arguments, undefined]);
-to_erl([?RESULT, RequestId, Details, Arguments, ArgumentsKw]) ->
-    true = sbp_validator:is_valid_id(RequestId),
-    true = sbp_validator:is_valid_dict(Details),
-    true = sbp_validator:is_valid_arguments(Arguments),
-    true = sbp_validator:is_valid_argumentskw(ArgumentsKw),
-    #{type => result, req_id => RequestId, details => dict_to_erl(Details),
+msg_to_erl([?RESULT, RequestId, Details, Arguments, ArgumentsKw]) ->
+    #{type => result, request_id => RequestId, details => dict_to_erl(Details),
       arguments => Arguments, arguments_kw => ArgumentsKw};
-to_erl([?REGISTER, RequestId, Options, Procedure]) ->
-    true = sbp_validator:is_valid_id(RequestId),
-    true = sbp_validator:is_valid_dict(Options),
-    true = sbp_validator:is_valid_uri(Procedure),
-    #{type => register, req_id => RequestId, options => dict_to_erl(Options),
+msg_to_erl([?REGISTER, RequestId, Options, Procedure]) ->
+    #{type => register, request_id => RequestId, options => dict_to_erl(Options),
       procedure => Procedure};
-to_erl([?REGISTERED, RequestId, RegistrationId]) ->
-    true = sbp_validator:is_valid_id(RequestId),
-    true = sbp_validator:is_valid_id(RegistrationId),
-    #{type => registered, req_id => RequestId, req_id => RegistrationId};
-to_erl([?UNREGISTER, RequestId, RegistrationId]) ->
-    #{type => unregister, req_id => RequestId, reg_id => RegistrationId};
-to_erl([?UNREGISTERED, RequestId]) ->
-    true = sbp_validator:is_valid_id(RequestId),
-    #{type => unregistered, req_id => RequestId};
-to_erl([?INVOCATION, RequestId, RegistrationId, Details]) ->
-    to_erl([?INVOCATION, RequestId, RegistrationId, Details, undefined,
+msg_to_erl([?REGISTERED, RequestId, RegistrationId]) ->
+    #{type => registered, request_id => RequestId, request_id => RegistrationId};
+msg_to_erl([?UNREGISTER, RequestId, RegistrationId]) ->
+    #{type => unregister, request_id => RequestId, reg_id => RegistrationId};
+msg_to_erl([?UNREGISTERED, RequestId]) ->
+    #{type => unregistered, request_id => RequestId};
+msg_to_erl([?INVOCATION, RequestId, RegistrationId, Details]) ->
+    msg_to_erl([?INVOCATION, RequestId, RegistrationId, Details, undefined,
             undefined]);
-to_erl([?INVOCATION, RequestId, RegistrationId, Details, Arguments]) ->
-    to_erl([?INVOCATION, RequestId, RegistrationId, Details, Arguments,
+msg_to_erl([?INVOCATION, RequestId, RegistrationId, Details, Arguments]) ->
+    msg_to_erl([?INVOCATION, RequestId, RegistrationId, Details, Arguments,
             undefined]);
-to_erl([?INVOCATION, RequestId, RegistrationId, Details, Arguments,
+msg_to_erl([?INVOCATION, RequestId, RegistrationId, Details, Arguments,
         ArgumentsKw]) ->
-    true = sbp_validator:is_valid_id(RequestId),
-    true = sbp_validator:is_valid_id(RegistrationId),
-    true = sbp_validator:is_valid_dict(Details),
-    true = sbp_validator:is_valid_arguments(Arguments),
-    true = sbp_validator:is_valid_argumentskw(ArgumentsKw),
-    #{type => invocation, req_id => RequestId, req_id => RegistrationId,
+    #{type => invocation, request_id => RequestId, request_id => RegistrationId,
       details => dict_to_erl(Details), arguments => Arguments,
       arguments_kw => ArgumentsKw};
-to_erl([?INTERRUPT, RequestId, Options]) ->
-    true = sbp_validator:is_valid_dict(Options),
-    #{type => interrupt, req_id => RequestId, options => dict_to_erl(Options)};
-to_erl([?YIELD, RequestId, Options]) ->
-    to_erl([?YIELD, RequestId, Options, undefined, undefined]);
-to_erl([?YIELD, RequestId, Options, Arguments]) ->
-    to_erl([?YIELD, RequestId, Options, Arguments, undefined]);
-to_erl([?YIELD, RequestId, Options, Arguments, ArgumentsKw]) ->
-    true = sbp_validator:is_valid_id(RequestId),
-    true = sbp_validator:is_valid_dict(Options),
-    true = sbp_validator:is_valid_arguments(Arguments),
-    true = sbp_validator:is_valid_argumentskw(ArgumentsKw),
-    #{type => yield, req_id => RequestId, options => dict_to_erl(Options),
+msg_to_erl([?INTERRUPT, RequestId, Options]) ->
+    #{type => interrupt, request_id => RequestId, options => dict_to_erl(Options)};
+msg_to_erl([?YIELD, RequestId, Options]) ->
+    msg_to_erl([?YIELD, RequestId, Options, undefined, undefined]);
+msg_to_erl([?YIELD, RequestId, Options, Arguments]) ->
+    msg_to_erl([?YIELD, RequestId, Options, Arguments, undefined]);
+msg_to_erl([?YIELD, RequestId, Options, Arguments, ArgumentsKw]) ->
+    #{type => yield, request_id => RequestId, options => dict_to_erl(Options),
       arguments => Arguments, arguments_kw => ArgumentsKw}.
 
 
