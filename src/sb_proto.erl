@@ -11,11 +11,16 @@
 -define(JSONB_SEPARATOR, <<24>>).
 
 deserialize(Buffer, Encoding) ->
-  case lists:member(Encoding, [raw_msgpack, raw_json, msgpack_batched,
-                               raw_erlbin]) of
-    true -> deserialize_binary(Buffer, [], Encoding);
-    _ -> deserialize_text(Buffer, [], Encoding)
-  end.
+    BinaryEncodings = [raw_msgpack, raw_json, msgpack_batched, raw_erlbin],
+    IsBinaryEnc = lists:member(Encoding, BinaryEncodings),
+    deserialize_bin_or_text(IsBinaryEnc, Buffer, Encoding).
+
+deserialize_bin_or_text(true, Buffer, Encoding) ->
+    deserialize_binary(Buffer, [], Encoding);
+deserialize_bin_or_text(false, Buffer, Encoding) ->
+    deserialize_text(Buffer, [], Encoding).
+
+
 
 serialize(Erwa, Enc) ->
   WAMP = case {lists:member(Enc, [erlbin, raw_erlbin]), is_tuple(Erwa)} of
@@ -27,7 +32,7 @@ serialize(Erwa, Enc) ->
 
 %% @private
 -spec deserialize_text(Buffer :: binary(), Messages :: list(),
-                       Encoding :: atom()) -> {[Message :: term()],
+                       Encoding :: atom()) -> {[Message :: map()],
                                                NewBuffer :: binary()}.
 deserialize_text(Buffer, Messages, erlbin) ->
   Msg = binary_to_term(Buffer),
@@ -45,12 +50,14 @@ deserialize_text(Buffer, Messages, msgpack) ->
 deserialize_text(Buffer, Messages, json) ->
   %% is it possible to check the data here ?
   %% length and stuff, yet should not be needed
-  {[sbp_converter:to_erl(jsx:decode(Buffer, [return_maps])) | Messages],
-   <<"">>};
+  Msg = jsx:decode(Buffer, [return_maps, {labels, attempt_atom}]),
+  {[sbp_converter:to_erl(Msg) | Messages], <<"">>};
 deserialize_text(Buffer, _Messages, json_batched) ->
   Wamps = binary:split(Buffer, [?JSONB_SEPARATOR], [global, trim]),
-  {to_erl_reverse(lists:foldl(fun(M, List) -> [jsx:decode(M, [return_maps]) |
-                                               List] end, [], Wamps)), <<"">>};
+  Dec = fun(M, List) ->
+                [jsx:decode(M, [return_maps, {labels, attempt_atom}]) | List]
+        end,
+  {to_erl_reverse(lists:foldl(Dec, [], Wamps)), <<"">>};
 deserialize_text(Buffer, Messages, _) ->
   {to_erl_reverse(Messages), Buffer}.
 
@@ -138,3 +145,6 @@ to_erl_reverse(List) ->
 to_erl_reverse([], List) -> List;
 to_erl_reverse([H | T], Messages) ->
   to_erl_reverse(T, [sbp_converter:to_erl(H) | Messages]).
+
+
+
