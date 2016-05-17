@@ -2,131 +2,101 @@
 -include_lib("eunit/include/eunit.hrl").
 -include("sbp_message_codes.hrl").
 
-hello_test() ->
-    Msg = [?HELLO, <<"test.uri">>, #{}],
-    ErlMsg = sbp_converter:to_erl(Msg),
-    #{type := hello, details := #{}, realm := <<"test.uri">>} = ErlMsg,
-    ok.
+convert_test_() ->
+    Realm = <<"test.uri">>,
+    Error = <<"wamp.error.test">>,
+    Topic = <<"topic.test">>,
+    Arg = [1,2,3],
+    ArgKw = #{<<"key">> => <<"value">>},
+    %% Procedure = <<"test.procedure">>,
+    Msgs = [
+            {[?HELLO, Realm, #{}],
+             #{type => hello, details => #{}, realm => Realm} },
+            {[?WELCOME, 234, #{}],
+             #{type => welcome, details => #{}, session_id => 234}},
+            {[?ABORT, #{}, Error],
+             #{type => abort, details => #{}, reason => Error}},
+            {[?PUBLISH, 456, #{}, Topic],
+             #{type => publish, options => #{}, topic => Topic,
+               request_id => 456} },
+            {[?PUBLISH, 456, #{}, Topic, Arg],
+             #{type => publish, options => #{}, topic => Topic,
+               request_id => 456, arguments => Arg }},
+            {[?PUBLISH, 456, #{}, Topic, [], ArgKw ],
+             #{type => publish, options => #{}, topic => Topic,
+               request_id => 456, arguments_kw => ArgKw, arguments => [] } },
+            %% {[?PUBLISHED, 123, 456],
+            %%  #{type => published, request_id => 123, publication_id => 456}},
+            %% {[?SUBSCRIBE, 123, #{}, Topic],
+            %%  #{type => subscribe, request_id => 123, options => #{},
+            %%    topic => Topic}},
+            %% {[?SUBSCRIBED, 123, 456],
+            %%  #{type => subscribed, request_id => 123, subscription_id => 456}},
+            %% {[?UNSUBSCRIBE, 123, 456],
+            %%  #{type => unsubscribe, request_id => 123, subscription_id => 456}},
+            %% {[?UNSUBSCRIBED, 123],
+            %%  #{type => unsubscribed, request_id => 123}},
+            %% {[?EVENT, 456, 789, #{}],
+            %%  #{type => event, subscription_id => 456, publication_id => 789,
+            %%    details => #{}}},
+            %% {[?EVENT, 456, 789, #{}, []],
+            %%  #{type => event, subscription_id => 456, publication_id => 789,
+            %%    details => #{}, arguments => []}},
+            %% {[?EVENT, 456, 789, #{}, [], #{}],
+            %%  #{type => event, subscription_id => 456, publication_id => 789,
+            %%    details => #{}, arguments => [], arguments_kw => #{}}},
+            %% {[?CALL, 123, #{}, Procedure],
+            %%  #{type => call, request_id => 123, options => #{},
+            %%    procedure => Procedure}},
+            %% {[?CALL, 123, #{}, Procedure, []],
+            %%  #{type => call, request_id => 123, options => #{},
+            %%    procedure => Procedure, arguments => []}},
+            %% {[?CALL, 123, #{}, Procedure, [], #{}],
+            %%  #{type => call, request_id => 123, options => #{},
+            %%    procedure => Procedure, arguments_kw=> #{}, arguments => []}},
+            %% {[?RESULT, 123, #{}],
+            %%  #{type => result, request_id => 123, details => #{}}},
+            %% {[?RESULT, 123, #{}, []],
+            %%  #{type => result, request_id => 123, details => #{},
+            %%    arguments => []}},
+            %% {[?RESULT, 123, #{}, [], #{}],
+            %%  #{type => result, request_id => 123, details => #{},
+            %%    arguments => [], arguments_kw => #{}}},
+            %% {[?REGISTER, 123, #{}, Procedure],
+            %%  #{type => register, request_id => 123, options => #{},
+            %%    procedure => Procedure}},
+            %% {[?REGISTERED, 123, 456],
+            %%  #{type => registered, request_id => 123, registration_id => 456}},
+            %% {[?UNREGISTER, 123, 456],
+            %%  #{type => unregister, request_id => 123, registration_id => 456 }},
+            %% {[?UNREGISTERED, 123],
+            %%  #{type => unregistered, request_id => 123}},
+            %% {[?INVOCATION, 123, 456, #{}],
+            %%  #{type => invocation, request_id => 123, registration_id => 456,
+            %%   details => #{}}},
+            %% {[?INVOCATION, 123, 456, #{}, []],
+            %%  #{type => invocation, request_id => 123, registration_id => 456,
+            %%   details => #{}, arguments => []}},
+            %% {[?INVOCATION, 123, 456, #{}, [], #{}],
+            %%  #{type => invocation, request_id => 123, registration_id => 456,
+            %%   details => #{}, arguments => [], arguments_kw => #{}}},
+            %% {[?YIELD, 123, #{}],
+            %%  #{type => yield, request_id => 123, options => #{}}},
+            %% {[?YIELD, 123, #{}, []],
+            %%  #{type => yield, request_id => 123, options => #{}, arguments => []}},
+            %% {[?YIELD, 123, #{}, [], #{}],
+            %%  #{type => yield, request_id => 123, options => #{}, arguments => [], arguments_kw => #{}}},
+            {[?GOODBYE, #{}, Error],
+             #{type => goodbye, details => #{},
+               reason => Error }}
+           ],
+    ToErl = fun({Wamp, Exp}, List) ->
+                  [ ?_assertEqual(Exp, sbp_converter:to_erl(Wamp)) | List]
+          end,
+    ToWamp = fun({Exp, Erl}, List) ->
+                  [ ?_assertEqual(Exp, sbp_converter:to_wamp(Erl)) | List]
+          end,
+    ToErlList = lists:foldl(ToErl, [], Msgs),
+    ToWampList = lists:foldl(ToWamp, [], Msgs),
+    lists:reverse(ToErlList) ++ lists:reverse(ToWampList).
 
-welcome_test() ->
-    Msg = [?WELCOME, 234, #{}],
-    ErlMsg = sbp_converter:to_erl(Msg),
-    #{type := welcome, details := #{}, session_id := 234} = ErlMsg,
-    ok.
-
-abort_test() ->
-    Msg = [?ABORT, #{}, <<"wamp.error.test">>],
-    ErlMsg = sbp_converter:to_erl(Msg),
-    #{type := abort, details := #{}, reason := <<"wamp.error.test">>} = ErlMsg,
-    ok.
-
-%% error_test() ->
-%%     Msg = [?ABORT, #{}, <<"wamp.error.test">>],
-%%     ErlMsg = sbp_converter:to_erl(Msg),
-%%     #{type := abort, details := #{}, reason := <<"wamp.error.test">>} = ErlMsg,
-%%     ok.
-
-publish_test() ->
-    Msg1 = [?PUBLISH, 456, #{}, <<"test.topic">>],
-    Msg2 = [?PUBLISH, 456, #{}, <<"test.topic">>, []],
-    Msg3 = [?PUBLISH, 456, #{}, <<"test.topic">>, [], #{}],
-    ErlMsg1 = sbp_converter:to_erl(Msg1),
-    ErlMsg2 = sbp_converter:to_erl(Msg2),
-    ErlMsg3 = sbp_converter:to_erl(Msg3),
-    #{type := publish, options := #{}, topic := <<"test.topic">>,
-      request_id := 456} = ErlMsg1,
-    #{type := publish, options := #{}, topic := <<"test.topic">>,
-      request_id := 456, arguments := []} = ErlMsg2,
-    #{type := publish, options := #{}, topic := <<"test.topic">>,
-      request_id := 456, arguments := [], arguments_kw := #{}} = ErlMsg3,
-    ok.
-
-published_test() ->
-    Msg = [?PUBLISHED, 123, 456],
-    ErlMsg = sbp_converter:to_erl(Msg),
-    #{type := published, request_id := 123, publication_id := 456} = ErlMsg,
-    ok.
-
-subscribe_test() ->
-    Msg = [?ABORT, #{}, <<"wamp.error.test">>],
-    ErlMsg = sbp_converter:to_erl(Msg),
-    #{type := abort, details := #{}, reason := <<"wamp.error.test">>} = ErlMsg,
-    ok.
-
-subscribed_test() ->
-    Msg = [?ABORT, #{}, <<"wamp.error.test">>],
-    ErlMsg = sbp_converter:to_erl(Msg),
-    #{type := abort, details := #{}, reason := <<"wamp.error.test">>} = ErlMsg,
-    ok.
-
-unsubscribe_test() ->
-    Msg = [?ABORT, #{}, <<"wamp.error.test">>],
-    ErlMsg = sbp_converter:to_erl(Msg),
-    #{type := abort, details := #{}, reason := <<"wamp.error.test">>} = ErlMsg,
-    ok.
-
-unsubscribed_test() ->
-    Msg = [?ABORT, #{}, <<"wamp.error.test">>],
-    ErlMsg = sbp_converter:to_erl(Msg),
-    #{type := abort, details := #{}, reason := <<"wamp.error.test">>} = ErlMsg,
-    ok.
-
-event_test() ->
-    Msg = [?ABORT, #{}, <<"wamp.error.test">>],
-    ErlMsg = sbp_converter:to_erl(Msg),
-    #{type := abort, details := #{}, reason := <<"wamp.error.test">>} = ErlMsg,
-    ok.
-
-call_test() ->
-    Msg = [?ABORT, #{}, <<"wamp.error.test">>],
-    ErlMsg = sbp_converter:to_erl(Msg),
-    #{type := abort, details := #{}, reason := <<"wamp.error.test">>} = ErlMsg,
-    ok.
-
-result_test() ->
-    Msg = [?ABORT, #{}, <<"wamp.error.test">>],
-    ErlMsg = sbp_converter:to_erl(Msg),
-    #{type := abort, details := #{}, reason := <<"wamp.error.test">>} = ErlMsg,
-    ok.
-
-register_test() ->
-    Msg = [?ABORT, #{}, <<"wamp.error.test">>],
-    ErlMsg = sbp_converter:to_erl(Msg),
-    #{type := abort, details := #{}, reason := <<"wamp.error.test">>} = ErlMsg,
-    ok.
-
-registered_test() ->
-    Msg = [?ABORT, #{}, <<"wamp.error.test">>],
-    ErlMsg = sbp_converter:to_erl(Msg),
-    #{type := abort, details := #{}, reason := <<"wamp.error.test">>} = ErlMsg,
-    ok.
-
-unregister_test() ->
-    Msg = [?ABORT, #{}, <<"wamp.error.test">>],
-    ErlMsg = sbp_converter:to_erl(Msg),
-    #{type := abort, details := #{}, reason := <<"wamp.error.test">>} = ErlMsg,
-    ok.
-
-unregistered_test() ->
-    Msg = [?ABORT, #{}, <<"wamp.error.test">>],
-    ErlMsg = sbp_converter:to_erl(Msg),
-    #{type := abort, details := #{}, reason := <<"wamp.error.test">>} = ErlMsg,
-    ok.
-
-invocation_test() ->
-    Msg = [?ABORT, #{}, <<"wamp.error.test">>],
-    ErlMsg = sbp_converter:to_erl(Msg),
-    #{type := abort, details := #{}, reason := <<"wamp.error.test">>} = ErlMsg,
-    ok.
-
-yield_test() ->
-    Msg = [?ABORT, #{}, <<"wamp.error.test">>],
-    ErlMsg = sbp_converter:to_erl(Msg),
-    #{type := abort, details := #{}, reason := <<"wamp.error.test">>} = ErlMsg,
-    ok.
-
-goodbye_test() ->
-    Msg = [?HELLO, <<"test.uri">>, #{}],
-    ErlMsg = sbp_converter:to_erl(Msg),
-    #{type := hello, details := #{}, realm := <<"test.uri">>} = ErlMsg,
-    ok.

@@ -11,65 +11,70 @@
 %% API
 -export([to_wamp/1, to_erl/1]).
 
-to_wamp({hello, Realm, Details}) ->
+to_wamp(#{type := hello, realm := Realm, details := Details}) ->
     [?HELLO, Realm, hello_dict_to_wamp(Details)];
-to_wamp({challenge, wampcra, Extra}) ->
-    to_wamp({challenge, <<"wampcra">>, Extra});
-to_wamp({challenge, AuthMethod, Extra}) ->
-    [?CHALLENGE, AuthMethod, dict_to_wamp(Extra)];
-to_wamp({authenticate, Signature, Extra}) ->
-    [?AUTHENTICATE, Signature, dict_to_wamp(Extra)];
-to_wamp({welcome, SessionId, Details}) ->
+%% to_wamp({challenge, wampcra, Extra}) ->
+%%     to_wamp({challenge, <<"wampcra">>, Extra});
+%% to_wamp({challenge, AuthMethod, Extra}) ->
+%%     [?CHALLENGE, AuthMethod, dict_to_wamp(Extra)];
+%% to_wamp({authenticate, Signature, Extra}) ->
+%%     [?AUTHENTICATE, Signature, dict_to_wamp(Extra)];
+to_wamp(#{type := welcome, session_id := SessionId, details := Details}) ->
     [?WELCOME, SessionId, dict_to_wamp(Details)];
-to_wamp({heartbeat, IncomingSeq, OutgoingSeq}) ->
-    [?HEARTBEAT, IncomingSeq, OutgoingSeq];
-to_wamp({abort, Details, Error}) when is_atom(Error) ->
-    to_wamp({abort, Details, error_to_wamp(Error)});
-to_wamp({abort, Details, Reason}) ->
-    [?ABORT, dict_to_wamp(Details), Reason];
-to_wamp({goodbye, Details, Error}) when is_atom(Error) ->
-    to_wamp({goodbye, Details, error_to_wamp(Error)});
-to_wamp({goodbye, Details, Reason}) ->
-    [?GOODBYE, dict_to_wamp(Details), Reason];
-to_wamp({error, Origin, RequestId, Details, Error, Arguments, ArgumentsKw})
-  when is_atom(Error) ->
-    to_wamp({error, Origin, RequestId, Details, error_to_wamp(Error), Arguments,
-             ArgumentsKw});
-to_wamp({error, subscribe, RequestId, Details, Error, Arguments,
-         ArgumentsKw}) ->
-    to_wamp({error, ?SUBSCRIBE, RequestId, Details, Error, Arguments,
-             ArgumentsKw});
-to_wamp({error, unsubscribe, RequestId, Details, Error, Arguments,
-         ArgumentsKw}) ->
-    to_wamp({error, ?UNSUBSCRIBE, RequestId, Details, Error, Arguments,
-             ArgumentsKw});
-to_wamp({error, publish, RequestId, Details, Error, Arguments, ArgumentsKw}) ->
-    to_wamp({error, ?PUBLISH, RequestId, Details, Error, Arguments,
-             ArgumentsKw});
-to_wamp({error, register, RequestId, Details, Error, Arguments, ArgumentsKw}) ->
-    to_wamp({error, ?REGISTER, RequestId, Details, Error, Arguments,
-             ArgumentsKw});
-to_wamp({error, unregister, RequestId, Details, Error, Arguments,
-         ArgumentsKw}) ->
-    to_wamp({error, ?UNREGISTER, RequestId, Details, Error, Arguments,
-             ArgumentsKw});
-to_wamp({error, call, RequestId, Details, Error, Arguments, ArgumentsKw}) ->
-    to_wamp({error, ?CALL, RequestId, Details, Error, Arguments, ArgumentsKw});
-to_wamp({error, invocation, RequestId, Details, Error, Arguments,
-         ArgumentsKw}) ->
-    to_wamp({error, ?INVOCATION, RequestId, Details, Error, Arguments,
-             ArgumentsKw});
-to_wamp({error, Origin, RequestId, Details, Reason, undefined, undefined}) ->
-    [?ERROR, Origin, RequestId, dict_to_wamp(Details), Reason];
-to_wamp({error, Origin, RequestId, Details, Reason, Arguments, undefined}) ->
-    [?ERROR, Origin, RequestId, dict_to_wamp(Details), Reason, Arguments];
-to_wamp({error, Origin, RequestId, Details, Reason, Arguments, ArgumentsKw}) ->
-    [?ERROR, Origin, RequestId, dict_to_wamp(Details), Reason, Arguments,
-     ArgumentsKw];
-to_wamp({publish, RequestId, Options, Topic, undefined, undefined}) ->
+%% to_wamp({type := heartbeat, IncomingSeq, OutgoingSeq}) ->
+%%     [?HEARTBEAT, IncomingSeq, OutgoingSeq];
+to_wamp(#{type := abort, details := Details, reason := Reason}) ->
+    [?ABORT, dict_to_wamp(Details), error_to_wamp(Reason)];
+to_wamp(#{type := goodbye, details := Details, reason := Reason}) ->
+    [?GOODBYE, dict_to_wamp(Details), error_to_wamp(Reason)];
+%% to_wamp(#{type := error, Origin, RequestId, Details, Error, Arguments, ArgumentsKw})
+%%   when is_atom(Error) ->
+%%     to_wamp({error, Origin, RequestId, Details, error_to_wamp(Error), Arguments,
+%%              ArgumentsKw});
+%% to_wamp({error, subscribe, RequestId, Details, Error, Arguments,
+%%          ArgumentsKw}) ->
+%%     to_wamp({error, ?SUBSCRIBE, RequestId, Details, Error, Arguments,
+%%              ArgumentsKw});
+%% to_wamp({error, unsubscribe, RequestId, Details, Error, Arguments,
+%%          ArgumentsKw}) ->
+%%     to_wamp({error, ?UNSUBSCRIBE, RequestId, Details, Error, Arguments,
+%%              ArgumentsKw});
+%% to_wamp({error, publish, RequestId, Details, Error, Arguments, ArgumentsKw}) ->
+%%     to_wamp({error, ?PUBLISH, RequestId, Details, Error, Arguments,
+%%              ArgumentsKw});
+%% to_wamp({error, register, RequestId, Details, Error, Arguments, ArgumentsKw}) ->
+%%     to_wamp({error, ?REGISTER, RequestId, Details, Error, Arguments,
+%%              ArgumentsKw});
+%% to_wamp({error, unregister, RequestId, Details, Error, Arguments,
+%%          ArgumentsKw}) ->
+%%     to_wamp({error, ?UNREGISTER, RequestId, Details, Error, Arguments,
+%%              ArgumentsKw});
+%% to_wamp({error, call, RequestId, Details, Error, Arguments, ArgumentsKw}) ->
+%%     to_wamp({error, ?CALL, RequestId, Details, Error, Arguments, ArgumentsKw});
+%% to_wamp({error, invocation, RequestId, Details, Error, Arguments,
+%%          ArgumentsKw}) ->
+%%     to_wamp({error, ?INVOCATION, RequestId, Details, Error, Arguments,
+%%              ArgumentsKw});
+%% to_wamp({error, Origin, RequestId, Details, Reason, undefined, undefined}) ->
+%%     [?ERROR, Origin, RequestId, dict_to_wamp(Details), Reason];
+%% to_wamp({error, Origin, RequestId, Details, Reason, Arguments, undefined}) ->
+%%     [?ERROR, Origin, RequestId, dict_to_wamp(Details), Reason, Arguments];
+%% to_wamp({error, Origin, RequestId, Details, Reason, Arguments, ArgumentsKw}) ->
+%%     [?ERROR, Origin, RequestId, dict_to_wamp(Details), Reason, Arguments,
+%%      ArgumentsKw];
+to_wamp(#{type := publish, request_id := RequestId, options := Options,
+          topic := Topic, arguments_kw := ArgumentsKw} = Msg)
+  when is_map(ArgumentsKw), length(ArgumentsKw) > 0 ->
+        Arguments = maps:get(arguments, Msg, []),
+        [?PUBLISH, RequestId, dict_to_wamp(Options), Topic, Arguments,
+         ArgumentsKw];
+to_wamp(#{type := publish, request_id := RequestId, options := Options,
+          topic := Topic, arguments := Arguments})
+  when is_list(Arguments), length(Arguments) > 0 ->
+        [?PUBLISH, RequestId, dict_to_wamp(Options), Topic, Arguments];
+to_wamp(#{type := publish, request_id := RequestId, options := Options,
+          topic := Topic}) ->
     [?PUBLISH, RequestId, dict_to_wamp(Options), Topic];
-to_wamp({publish, RequestId, Options, Topic, Arguments, undefined}) ->
-    [?PUBLISH, RequestId, dict_to_wamp(Options), Topic, Arguments];
 to_wamp({publish, RequestId, Options, Topic, Arguments, ArgumentsKw}) ->
     [?PUBLISH, RequestId, dict_to_wamp(Options), Topic, Arguments, ArgumentsKw];
 to_wamp({published, RequestId, PublicationId}) ->
@@ -159,14 +164,13 @@ msg_to_erl([?CHALLENGE, AuthMethod, Extra]) ->
 msg_to_erl([?AUTHENTICATE, Signature, Extra]) ->
     #{type => authenticate, signature => Signature,
       extra => dict_to_erl(Extra)};
-msg_to_erl([?GOODBYE, Details, Error]) when is_binary(Error) ->
-    msg_to_erl([?GOODBYE, Details, error_to_erl(Error)]);
 msg_to_erl([?GOODBYE, Details, Reason]) ->
-    #{type => goodbye, details => dict_to_erl(Details), reason => Reason};
+    #{type => goodbye, details => dict_to_erl(Details),
+      reason => try_error_to_erl(Reason)};
 msg_to_erl([?HEARTBEAT, IncomingSeq, OutgoingSeq, _Discard]) ->
     msg_to_erl([?HEARTBEAT, IncomingSeq, OutgoingSeq]);
 msg_to_erl([?HEARTBEAT, IncomingSeq, OutgoingSeq]) ->
-    #{type => heartbeat, seq_in => IncomingSeq, seq_out => OutgoingSeq};
+    #{type => heartbeat, sequence_in => IncomingSeq, sequence_out => OutgoingSeq};
 msg_to_erl([?ERROR, RequestType, RequestId, Details, Error]) ->
     msg_to_erl([?ERROR, RequestType, RequestId, Details, Error, undefined,
             undefined]);
@@ -183,14 +187,16 @@ msg_to_erl([?ERROR, RequestType, RequestId, Details, Error, Arguments, Arguments
                   ?CALL -> call;
                   ?INVOCATION -> invocation
               end,
-    #{type => error, req_type => ErlType, request_id => RequestId,
+    #{type => error, request_type => ErlType, request_id => RequestId,
       details => Details,
       error => try_error_to_erl(Error), arguments => Arguments,
       arguments_kw => ArgumentsKw};
 msg_to_erl([?PUBLISH, RequestId, Options, Topic]) ->
-    to_erl([?PUBLISH, RequestId, Options, Topic, undefined, undefined]);
+    #{type => publish,  request_id => RequestId, options => dict_to_erl(Options),
+      topic => Topic};
 msg_to_erl([?PUBLISH, RequestId, Options, Topic, Arguments]) ->
-    to_erl([?PUBLISH, RequestId, Options, Topic, Arguments, undefined]);
+    #{type => publish,  request_id => RequestId, options => dict_to_erl(Options),
+      topic => Topic, arguments => Arguments};
 msg_to_erl([?PUBLISH, RequestId, Options, Topic, Arguments, ArgumentsKw]) ->
     #{type => publish,  request_id => RequestId, options => dict_to_erl(Options),
       topic => Topic, arguments => Arguments, arguments_kw => ArgumentsKw};
@@ -200,26 +206,28 @@ msg_to_erl([?SUBSCRIBE, RequestId, Options, Topic]) ->
     #{type => subscribe, request_id => RequestId, options => dict_to_erl(Options),
       topic => Topic};
 msg_to_erl([?SUBSCRIBED, RequestId, SubscriptionId]) ->
-    #{type => subscribed, request_id => RequestId, sub_id => SubscriptionId};
+    #{type => subscribed, request_id => RequestId, subscription_id => SubscriptionId};
 msg_to_erl([?UNSUBSCRIBE, RequestId, SubscriptionId]) ->
-    #{type => unsubscribe, request_id => RequestId, sub_id => SubscriptionId};
+    #{type => unsubscribe, request_id => RequestId, subscription_id => SubscriptionId};
 msg_to_erl([?UNSUBSCRIBED, RequestId]) ->
     #{type => unsubscribed, request_id => RequestId};
 msg_to_erl([?EVENT, SubscriptionId, PublicationId, Details]) ->
-    msg_to_erl([?EVENT, SubscriptionId, PublicationId, Details, undefined,
-            undefined]);
+    #{type => event, subscription_id => SubscriptionId, publication_id => PublicationId,
+      details => dict_to_erl(Details)};
 msg_to_erl([?EVENT, SubscriptionId, PublicationId, Details, Arguments]) ->
-    msg_to_erl([?EVENT, SubscriptionId, PublicationId, Details, Arguments,
-            undefined]);
+    #{type => event, subscription_id => SubscriptionId, publication_id => PublicationId,
+      details => dict_to_erl(Details), arguments => Arguments};
 msg_to_erl([?EVENT, SubscriptionId, PublicationId, Details, Arguments,
         ArgumentsKw]) ->
-    #{type => event, sub_id => SubscriptionId, publication_id => PublicationId,
+    #{type => event, subscription_id => SubscriptionId, publication_id => PublicationId,
       details => dict_to_erl(Details), arguments => Arguments,
       arguments_kw => ArgumentsKw};
 msg_to_erl([?CALL, RequestId, Options, Procedure]) ->
-    to_erl([?CALL, RequestId, Options, Procedure, undefined, undefined]);
+    #{type => call, request_id => RequestId, options => dict_to_erl(Options),
+      procedure => Procedure};
 msg_to_erl([?CALL, RequestId, Options, Procedure, Arguments]) ->
-    to_erl([?CALL, RequestId, Options, Procedure, Arguments, undefined]);
+    #{type => call, request_id => RequestId, options => dict_to_erl(Options),
+      procedure => Procedure, arguments => Arguments};
 msg_to_erl([?CALL, RequestId, Options, Procedure, Arguments, ArgumentsKw]) ->
     #{type => call, request_id => RequestId, options => dict_to_erl(Options),
       procedure => Procedure, arguments => Arguments,
@@ -227,9 +235,10 @@ msg_to_erl([?CALL, RequestId, Options, Procedure, Arguments, ArgumentsKw]) ->
 msg_to_erl([?CANCEL, RequestId, Options]) ->
     #{type => cancel, request_id => RequestId, options => dict_to_erl(Options)};
 msg_to_erl([?RESULT, RequestId, Details]) ->
-    msg_to_erl([?RESULT, RequestId, Details, undefined, undefined]);
+    #{type => result, request_id => RequestId, details => dict_to_erl(Details)};
 msg_to_erl([?RESULT, RequestId, Details, Arguments]) ->
-    to_erl([?RESULT, RequestId, Details, Arguments, undefined]);
+    #{type => result, request_id => RequestId, details => dict_to_erl(Details),
+      arguments => Arguments};
 msg_to_erl([?RESULT, RequestId, Details, Arguments, ArgumentsKw]) ->
     #{type => result, request_id => RequestId, details => dict_to_erl(Details),
       arguments => Arguments, arguments_kw => ArgumentsKw};
@@ -237,28 +246,31 @@ msg_to_erl([?REGISTER, RequestId, Options, Procedure]) ->
     #{type => register, request_id => RequestId, options => dict_to_erl(Options),
       procedure => Procedure};
 msg_to_erl([?REGISTERED, RequestId, RegistrationId]) ->
-    #{type => registered, request_id => RequestId, request_id => RegistrationId};
+    #{type => registered, request_id => RequestId,
+      registration_id => RegistrationId};
 msg_to_erl([?UNREGISTER, RequestId, RegistrationId]) ->
-    #{type => unregister, request_id => RequestId, reg_id => RegistrationId};
+    #{type => unregister, request_id => RequestId,
+      registration_id => RegistrationId};
 msg_to_erl([?UNREGISTERED, RequestId]) ->
     #{type => unregistered, request_id => RequestId};
 msg_to_erl([?INVOCATION, RequestId, RegistrationId, Details]) ->
-    msg_to_erl([?INVOCATION, RequestId, RegistrationId, Details, undefined,
-            undefined]);
+    #{type => invocation, request_id => RequestId, registration_id => RegistrationId,
+      details => dict_to_erl(Details)};
 msg_to_erl([?INVOCATION, RequestId, RegistrationId, Details, Arguments]) ->
-    msg_to_erl([?INVOCATION, RequestId, RegistrationId, Details, Arguments,
-            undefined]);
+    #{type => invocation, request_id => RequestId, registration_id => RegistrationId,
+      details => dict_to_erl(Details), arguments => Arguments};
 msg_to_erl([?INVOCATION, RequestId, RegistrationId, Details, Arguments,
-        ArgumentsKw]) ->
-    #{type => invocation, request_id => RequestId, request_id => RegistrationId,
+            ArgumentsKw]) ->
+    #{type => invocation, request_id => RequestId, registration_id => RegistrationId,
       details => dict_to_erl(Details), arguments => Arguments,
       arguments_kw => ArgumentsKw};
 msg_to_erl([?INTERRUPT, RequestId, Options]) ->
     #{type => interrupt, request_id => RequestId, options => dict_to_erl(Options)};
 msg_to_erl([?YIELD, RequestId, Options]) ->
-    msg_to_erl([?YIELD, RequestId, Options, undefined, undefined]);
+    #{type => yield, request_id => RequestId, options => dict_to_erl(Options)};
 msg_to_erl([?YIELD, RequestId, Options, Arguments]) ->
-    msg_to_erl([?YIELD, RequestId, Options, Arguments, undefined]);
+    #{type => yield, request_id => RequestId, options => dict_to_erl(Options),
+      arguments => Arguments};
 msg_to_erl([?YIELD, RequestId, Options, Arguments, ArgumentsKw]) ->
     #{type => yield, request_id => RequestId, options => dict_to_erl(Options),
       arguments => Arguments, arguments_kw => ArgumentsKw}.

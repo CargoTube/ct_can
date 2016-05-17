@@ -24,11 +24,17 @@ is_valid_entry({realm, Realm}) ->
     is_valid_uri(Realm);
 is_valid_entry({topic, Topic}) ->
     is_valid_uri(Topic);
+is_valid_entry({procedure, Procedure}) ->
+    is_valid_uri(Procedure);
 is_valid_entry({session_id, Id}) ->
     is_valid_id(Id);
 is_valid_entry({request_id, Id}) ->
     is_valid_id(Id);
 is_valid_entry({publication_id, Id}) ->
+    is_valid_id(Id);
+is_valid_entry({subscription_id, Id}) ->
+    is_valid_id(Id);
+is_valid_entry({registration_id, Id}) ->
     is_valid_id(Id);
 is_valid_entry({reason, Reason}) ->
     is_valid_uri(Reason);
