@@ -93,32 +93,31 @@ basic_convert_test_() ->
                reason => Error }}
            ],
 
-    %% TypeMappings = [
-    %%                 {?SUBSCRIBE, subscribe},
-    %%                 {?UNSUBSCRIBE, unsubscribe},
-    %%                 {?PUBLISH, publish},
-    %%                 {?REGISTER, register},
-    %%                 {?UNREGISTER, unregister},
-    %%                 {?CALL, call},
-    %%                 {?INVOCATION, invocation} ],
-    %%
-    %% ToError =fun({WampType, ErlType}, List) ->
-    %%                  [{[?ERROR, WampType, 123, #{}, Error],
-    %%                    #{type => error, request_type => ErlType,
-    %%                      request_id => 123, details => #{}, error => Error}},
-    %%                   {[?ERROR, WampType, 123, #{}, Error, Arg],
-    %%                    #{type => error, request_type => ErlType,
-    %%                      request_id => 123, details => #{}, error => Error,
-    %%                     arguments => Arg}},
-    %%                   {[?ERROR, WampType, 123, #{}, Error, [], ArgKw],
-    %%                    #{type => error, request_type => ErlType,
-    %%                      request_id => 123, details => #{}, error => Error,
-    %%                     arguments => [], arguments_kw => ArgKw}}
-    %%                   | List]
-    %%          end,
-    %% AllMsgs = lists:reverse(lists:foldl(ToError, lists:reverse(Msgs),
-    %%                                     TypeMappings)),
-    AllMsgs = Msgs,
+    TypeMappings = [
+                    {?SUBSCRIBE, subscribe},
+                    {?UNSUBSCRIBE, unsubscribe},
+                    {?PUBLISH, publish},
+                    {?REGISTER, register},
+                    {?UNREGISTER, unregister},
+                    {?CALL, call},
+                    {?INVOCATION, invocation} ],
+
+    ToError =fun({WampType, ErlType}, List) ->
+                     [{[?ERROR, WampType, 123, #{}, Error],
+                       #{type => error, request_type => ErlType,
+                         request_id => 123, details => #{}, error => Error}},
+                      {[?ERROR, WampType, 123, #{}, Error, Arg],
+                       #{type => error, request_type => ErlType,
+                         request_id => 123, details => #{}, error => Error,
+                        arguments => Arg}},
+                      {[?ERROR, WampType, 123, #{}, Error, [], ArgKw],
+                       #{type => error, request_type => ErlType,
+                         request_id => 123, details => #{}, error => Error,
+                        arguments => [], arguments_kw => ArgKw}}
+                      | List]
+             end,
+    AllMsgs = lists:reverse(lists:foldl(ToError, lists:reverse(Msgs),
+                                        TypeMappings)),
     ToErl = fun({Wamp, Exp}, List) ->
                   [ ?_assertEqual(Exp, sbp_converter:to_erl(Wamp)) | List]
           end,

@@ -27,41 +27,23 @@ to_wamp(#{type := abort, details := Details, reason := Reason}) ->
     [?ABORT, dict_to_wamp(Details), error_to_wamp(Reason)];
 to_wamp(#{type := goodbye, details := Details, reason := Reason}) ->
     [?GOODBYE, dict_to_wamp(Details), error_to_wamp(Reason)];
-%% to_wamp(#{type := error, Origin, RequestId, Details, Error, Arguments, ArgumentsKw})
-%%   when is_atom(Error) ->
-%%     to_wamp({error, Origin, RequestId, Details, error_to_wamp(Error), Arguments,
-%%              ArgumentsKw});
-%% to_wamp({error, subscribe, RequestId, Details, Error, Arguments,
-%%          ArgumentsKw}) ->
-%%     to_wamp({error, ?SUBSCRIBE, RequestId, Details, Error, Arguments,
-%%              ArgumentsKw});
-%% to_wamp({error, unsubscribe, RequestId, Details, Error, Arguments,
-%%          ArgumentsKw}) ->
-%%     to_wamp({error, ?UNSUBSCRIBE, RequestId, Details, Error, Arguments,
-%%              ArgumentsKw});
-%% to_wamp({error, publish, RequestId, Details, Error, Arguments, ArgumentsKw}) ->
-%%     to_wamp({error, ?PUBLISH, RequestId, Details, Error, Arguments,
-%%              ArgumentsKw});
-%% to_wamp({error, register, RequestId, Details, Error, Arguments, ArgumentsKw}) ->
-%%     to_wamp({error, ?REGISTER, RequestId, Details, Error, Arguments,
-%%              ArgumentsKw});
-%% to_wamp({error, unregister, RequestId, Details, Error, Arguments,
-%%          ArgumentsKw}) ->
-%%     to_wamp({error, ?UNREGISTER, RequestId, Details, Error, Arguments,
-%%              ArgumentsKw});
-%% to_wamp({error, call, RequestId, Details, Error, Arguments, ArgumentsKw}) ->
-%%     to_wamp({error, ?CALL, RequestId, Details, Error, Arguments, ArgumentsKw});
-%% to_wamp({error, invocation, RequestId, Details, Error, Arguments,
-%%          ArgumentsKw}) ->
-%%     to_wamp({error, ?INVOCATION, RequestId, Details, Error, Arguments,
-%%              ArgumentsKw});
-%% to_wamp({error, Origin, RequestId, Details, Reason, undefined, undefined}) ->
-%%     [?ERROR, Origin, RequestId, dict_to_wamp(Details), Reason];
-%% to_wamp({error, Origin, RequestId, Details, Reason, Arguments, undefined}) ->
-%%     [?ERROR, Origin, RequestId, dict_to_wamp(Details), Reason, Arguments];
-%% to_wamp({error, Origin, RequestId, Details, Reason, Arguments, ArgumentsKw}) ->
-%%     [?ERROR, Origin, RequestId, dict_to_wamp(Details), Reason, Arguments,
-%%      ArgumentsKw];
+to_wamp(#{type := error, request_type := AtomType, request_id := RequestId,
+          details := Details, error := Error,
+          arguments_kw := ArgumentsKw} = Msg)
+  when is_map(ArgumentsKw), map_size(ArgumentsKw) > 0 ->
+    WampType = atom_to_request_type(AtomType),
+    Arguments = maps:get(arguments, Msg, []),
+    [?ERROR, WampType, RequestId, Details, error_to_wamp(Error), Arguments,
+     ArgumentsKw];
+to_wamp(#{type := error, request_type := AtomType, request_id := RequestId,
+          details := Details, error := Error, arguments := Arguments})
+  when is_list(Arguments), length(Arguments) > 0 ->
+    WampType = atom_to_request_type(AtomType),
+    [?ERROR, WampType, RequestId, Details, error_to_wamp(Error), Arguments];
+to_wamp(#{type := error, request_type := AtomType, request_id := RequestId,
+          details := Details, error := Error}) ->
+    WampType = atom_to_request_type(AtomType),
+    [?ERROR, WampType, RequestId, Details, error_to_wamp(Error)];
 to_wamp(#{type := publish, request_id := RequestId, options := Options,
           topic := Topic, arguments_kw := ArgumentsKw} = Msg)
   when is_map(ArgumentsKw), map_size(ArgumentsKw) > 0 ->
@@ -441,14 +423,19 @@ convert_value(Direction, Value, Mapping) ->
         to_wamp -> WampVal
     end.
 
-request_type_to_atom(RequestType) ->
-    case RequestType of
-        ?SUBSCRIBE -> subscribe;
-        ?UNSUBSCRIBE -> unsubscribe;
-        ?PUBLISH -> publish;
-        ?REGISTER -> register;
-        ?UNREGISTER -> unregister;
-        ?CALL -> call;
-        ?INVOCATION -> invocation
-    end.
+-define(REQUEST_TYPE_MAPPING,
+        [{?SUBSCRIBE, subscribe},
+        {?UNSUBSCRIBE, unsubscribe},
+        {?PUBLISH, publish},
+        {?REGISTER, register},
+        {?UNREGISTER, unregister},
+        {?CALL, call},
+        {?INVOCATION, invocation}]).
 
+request_type_to_atom(RequestType) ->
+    {RequestType, Atom} = lists:keyfind(RequestType, 1, ?REQUEST_TYPE_MAPPING),
+    Atom.
+
+atom_to_request_type(Atom) ->
+    {RequestType, Atom} = lists:keyfind(Atom, 2, ?REQUEST_TYPE_MAPPING),
+    RequestType.
