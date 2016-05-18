@@ -36,7 +36,11 @@ is_valid_entry({subscription_id, Id}) ->
     is_valid_id(Id);
 is_valid_entry({registration_id, Id}) ->
     is_valid_id(Id);
+is_valid_entry({request_type, RequestType}) ->
+    is_valid_request_type(RequestType);
 is_valid_entry({reason, Reason}) ->
+    is_valid_uri(Reason);
+is_valid_entry({error, Reason}) ->
     is_valid_uri(Reason);
 is_valid_entry({details, Details}) ->
     is_valid_dict(Details);
@@ -55,6 +59,10 @@ is_valid_type(Type) ->
                  invocation, yield],
     lists:member(Type, ValidTypes).
 
+is_valid_request_type(Type) ->
+    ValidTypes = [publish, subscribe, unsubscribe, call, register, unregister,
+                  invocation],
+    lists:member(Type, ValidTypes).
 is_valid_uri(_Uri) ->
     true.
 
