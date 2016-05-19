@@ -11,6 +11,9 @@
 %% API
 -export([to_wamp/1, to_erl/1]).
 
+
+%% TODO: challenge, authenticate, hartbeat, cancel, interrupt
+
 to_wamp(#{type := hello, realm := Realm, details := Details}) ->
     [?HELLO, Realm, hello_dict_to_wamp(Details)];
 %% to_wamp({challenge, wampcra, Extra}) ->
@@ -181,7 +184,8 @@ msg_to_erl([?GOODBYE, Details, Reason]) ->
 msg_to_erl([?HEARTBEAT, IncomingSeq, OutgoingSeq, _Discard]) ->
     msg_to_erl([?HEARTBEAT, IncomingSeq, OutgoingSeq]);
 msg_to_erl([?HEARTBEAT, IncomingSeq, OutgoingSeq]) ->
-    #{type => heartbeat, sequence_in => IncomingSeq, sequence_out => OutgoingSeq};
+    #{type => heartbeat, sequence_in => IncomingSeq,
+      sequence_out => OutgoingSeq};
 msg_to_erl([?ERROR, RequestType, RequestId, Details, Error, Arguments,
             ArgumentsKw]) ->
     ErlType = request_type_to_atom(RequestType),
@@ -198,36 +202,41 @@ msg_to_erl([?ERROR, RequestType, RequestId, Details, Error]) ->
     #{type => error, request_type => ErlType, request_id => RequestId,
       details => Details, error => try_error_to_erl(Error)};
 msg_to_erl([?PUBLISH, RequestId, Options, Topic]) ->
-    #{type => publish,  request_id => RequestId, options => dict_to_erl(Options),
-      topic => Topic};
+    #{type => publish,  request_id => RequestId,
+      options => dict_to_erl(Options), topic => Topic};
 msg_to_erl([?PUBLISH, RequestId, Options, Topic, Arguments]) ->
-    #{type => publish,  request_id => RequestId, options => dict_to_erl(Options),
-      topic => Topic, arguments => Arguments};
+    #{type => publish,  request_id => RequestId,
+      options => dict_to_erl(Options), topic => Topic, arguments => Arguments};
 msg_to_erl([?PUBLISH, RequestId, Options, Topic, Arguments, ArgumentsKw]) ->
-    #{type => publish,  request_id => RequestId, options => dict_to_erl(Options),
-      topic => Topic, arguments => Arguments, arguments_kw => ArgumentsKw};
+    #{type => publish,  request_id => RequestId,
+      options => dict_to_erl(Options), topic => Topic, arguments => Arguments,
+      arguments_kw => ArgumentsKw};
 msg_to_erl([?PUBLISHED, RequestId, PublicationId]) ->
-    #{type => published, request_id => RequestId, publication_id => PublicationId};
+    #{type => published, request_id => RequestId,
+      publication_id => PublicationId};
 msg_to_erl([?SUBSCRIBE, RequestId, Options, Topic]) ->
-    #{type => subscribe, request_id => RequestId, options => dict_to_erl(Options),
-      topic => Topic};
+    #{type => subscribe, request_id => RequestId,
+      options => dict_to_erl(Options), topic => Topic};
 msg_to_erl([?SUBSCRIBED, RequestId, SubscriptionId]) ->
-    #{type => subscribed, request_id => RequestId, subscription_id => SubscriptionId};
+    #{type => subscribed, request_id => RequestId,
+      subscription_id => SubscriptionId};
 msg_to_erl([?UNSUBSCRIBE, RequestId, SubscriptionId]) ->
-    #{type => unsubscribe, request_id => RequestId, subscription_id => SubscriptionId};
+    #{type => unsubscribe, request_id => RequestId,
+      subscription_id => SubscriptionId};
 msg_to_erl([?UNSUBSCRIBED, RequestId]) ->
     #{type => unsubscribed, request_id => RequestId};
 msg_to_erl([?EVENT, SubscriptionId, PublicationId, Details]) ->
-    #{type => event, subscription_id => SubscriptionId, publication_id => PublicationId,
-      details => dict_to_erl(Details)};
+    #{type => event, subscription_id => SubscriptionId,
+      publication_id => PublicationId, details => dict_to_erl(Details)};
 msg_to_erl([?EVENT, SubscriptionId, PublicationId, Details, Arguments]) ->
-    #{type => event, subscription_id => SubscriptionId, publication_id => PublicationId,
-      details => dict_to_erl(Details), arguments => Arguments};
+    #{type => event, subscription_id => SubscriptionId,
+      publication_id => PublicationId, details => dict_to_erl(Details),
+      arguments => Arguments};
 msg_to_erl([?EVENT, SubscriptionId, PublicationId, Details, Arguments,
         ArgumentsKw]) ->
-    #{type => event, subscription_id => SubscriptionId, publication_id => PublicationId,
-      details => dict_to_erl(Details), arguments => Arguments,
-      arguments_kw => ArgumentsKw};
+    #{type => event, subscription_id => SubscriptionId,
+      publication_id => PublicationId, details => dict_to_erl(Details),
+      arguments => Arguments, arguments_kw => ArgumentsKw};
 msg_to_erl([?CALL, RequestId, Options, Procedure]) ->
     #{type => call, request_id => RequestId, options => dict_to_erl(Options),
       procedure => Procedure};
@@ -249,8 +258,8 @@ msg_to_erl([?RESULT, RequestId, Details, Arguments, ArgumentsKw]) ->
     #{type => result, request_id => RequestId, details => dict_to_erl(Details),
       arguments => Arguments, arguments_kw => ArgumentsKw};
 msg_to_erl([?REGISTER, RequestId, Options, Procedure]) ->
-    #{type => register, request_id => RequestId, options => dict_to_erl(Options),
-      procedure => Procedure};
+    #{type => register, request_id => RequestId,
+      options => dict_to_erl(Options), procedure => Procedure};
 msg_to_erl([?REGISTERED, RequestId, RegistrationId]) ->
     #{type => registered, request_id => RequestId,
       registration_id => RegistrationId};
@@ -260,18 +269,20 @@ msg_to_erl([?UNREGISTER, RequestId, RegistrationId]) ->
 msg_to_erl([?UNREGISTERED, RequestId]) ->
     #{type => unregistered, request_id => RequestId};
 msg_to_erl([?INVOCATION, RequestId, RegistrationId, Details]) ->
-    #{type => invocation, request_id => RequestId, registration_id => RegistrationId,
-      details => dict_to_erl(Details)};
+    #{type => invocation, request_id => RequestId,
+      registration_id => RegistrationId, details => dict_to_erl(Details)};
 msg_to_erl([?INVOCATION, RequestId, RegistrationId, Details, Arguments]) ->
-    #{type => invocation, request_id => RequestId, registration_id => RegistrationId,
-      details => dict_to_erl(Details), arguments => Arguments};
+    #{type => invocation, request_id => RequestId,
+      registration_id => RegistrationId, details => dict_to_erl(Details),
+      arguments => Arguments};
 msg_to_erl([?INVOCATION, RequestId, RegistrationId, Details, Arguments,
             ArgumentsKw]) ->
-    #{type => invocation, request_id => RequestId, registration_id => RegistrationId,
-      details => dict_to_erl(Details), arguments => Arguments,
-      arguments_kw => ArgumentsKw};
+    #{type => invocation, request_id => RequestId,
+      registration_id => RegistrationId, details => dict_to_erl(Details),
+      arguments => Arguments, arguments_kw => ArgumentsKw};
 msg_to_erl([?INTERRUPT, RequestId, Options]) ->
-    #{type => interrupt, request_id => RequestId, options => dict_to_erl(Options)};
+    #{type => interrupt, request_id => RequestId,
+      options => dict_to_erl(Options)};
 msg_to_erl([?YIELD, RequestId, Options]) ->
     #{type => yield, request_id => RequestId, options => dict_to_erl(Options)};
 msg_to_erl([?YIELD, RequestId, Options, Arguments]) ->
@@ -354,18 +365,15 @@ convert_dict(Type, Map, Direction) ->
                   _ -> ?DICT_MAPPING
               end,
     Folding = fun(Key, Value, InMap) ->
-                      {ConvKey, ConvValue} = convert_key_value(Direction, Key, Value, Mapping),
+                      {ConvKey, ConvValue} =
+                      convert_key_value(Direction, Key, Value, Mapping),
                       maps:put(ConvKey, ConvValue, InMap)
               end,
     maps:fold(Folding, #{}, Map).
 
 %% @private
 convert_key_value(Direction, Key, Value, Mapping) ->
-    KeyPos =
-    case Direction of
-        to_erl -> 2;
-        to_wamp -> 1
-    end,
+    KeyPos = key_pos(Direction),
     {ErlKey, WampKey, Deep} =
     case lists:keyfind(Key, KeyPos, Mapping) of
         {Ek, Wk, D} -> {Ek, Wk, D};
@@ -378,50 +386,31 @@ convert_key_value(Direction, Key, Value, Mapping) ->
         value -> convert_value(Direction, Value, Mapping);
         _ -> Value
     end,
-    ConvKey =
-    case Direction of
-        to_erl -> ErlKey;
-        to_wamp -> WampKey
-    end,
+    ConvKey = convert(Direction, {ErlKey, WampKey}),
     {ConvKey, ConvValue}.
 
 %% @private
 convert_list(_, [], [], _) -> [];
 convert_list(_, [], Converted, _) -> lists:reverse(Converted);
 convert_list(Direction, [Key | T], Converted, Mapping) ->
-    KeyPos =
-    case Direction of
-        to_erl -> 2;
-        to_wamp -> 1
-    end,
-    {ErlKey, WampKey} =
+    KeyPos = key_pos(Direction),
+    Keys =
     case lists:keyfind(Key, KeyPos, Mapping) of
         {Ek, Wk, _} -> {Ek, Wk};
         false -> {Key, Key}
     end,
-    ConvKey =
-    case Direction of
-        to_erl -> ErlKey;
-        to_wamp -> WampKey
-    end,
+    ConvKey = convert(Direction, Keys),
     convert_list(Direction, T, [ConvKey | Converted], Mapping).
 
 %% @private
 convert_value(Direction, Value, Mapping) ->
-    ValPos =
-    case Direction of
-        to_erl -> 2;
-        to_wamp -> 1
-    end,
-    {ErlVal, WampVal} =
+    ValPos = value_pos(Direction),
+    Values =
     case lists:keyfind(Value, ValPos, Mapping) of
         {EV, WV, _} -> {EV, WV};
         false -> {Value, Value}
     end,
-    case Direction of
-        to_erl -> ErlVal;
-        to_wamp -> WampVal
-    end.
+    convert(Direction, Values).
 
 -define(REQUEST_TYPE_MAPPING,
         [{?SUBSCRIBE, subscribe},
@@ -439,3 +428,17 @@ request_type_to_atom(RequestType) ->
 atom_to_request_type(Atom) ->
     {RequestType, Atom} = lists:keyfind(Atom, 2, ?REQUEST_TYPE_MAPPING),
     RequestType.
+
+value_pos(Direction) ->
+    key_pos(Direction).
+
+key_pos(to_erl) ->
+    2;
+key_pos(to_wamp) ->
+    1.
+
+convert(to_erl, {ErlVal, _}) ->
+    ErlVal;
+convert(to_wamp, {_, WampVal}) ->
+    WampVal.
+

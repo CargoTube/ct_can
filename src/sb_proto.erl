@@ -4,7 +4,7 @@
 
 %% @private
 -module(sb_proto).
--author("Bas Wegh, bwegh@github.com").
+-author("Bas Wegh").
 
 -export([deserialize/2, serialize/2]).
 
