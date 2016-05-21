@@ -22,22 +22,15 @@ deserialize_bin_or_text(false, Buffer, Encoding) ->
 
 
 
-serialize(Erwa, Enc) ->
-  WAMP = case {lists:member(Enc, [erlbin, raw_erlbin]), is_tuple(Erwa)} of
-           {false, true} -> sbp_converter:to_wamp(Erwa);
-           _ -> Erwa
-         end,
-  serialize_message(WAMP, Enc).
+serialize(WampMap, Enc) ->
+  WampMsg = sbp_converter:to_wamp(WampMap),
+  serialize_message(WampMsg, Enc).
 
 
 %% @private
 -spec deserialize_text(Buffer :: binary(), Messages :: list(),
-                       Encoding :: atom()) -> {[Message :: map()],
-                                               NewBuffer :: binary()}.
-deserialize_text(Buffer, Messages, erlbin) ->
-  Msg = binary_to_term(Buffer),
-  true = sbp_validator:is_valid_message(Msg),
-  {[Msg | Messages], <<"">>};
+                       Encoding :: atom()) ->
+    {[Message :: map()], NewBuffer :: binary()}.
 deserialize_text(Buffer, Messages, msgpack) ->
   case msgpack:unpack_stream(Buffer, []) of
     {error, incomplete} ->
@@ -48,10 +41,13 @@ deserialize_text(Buffer, Messages, msgpack) ->
       deserialize_text(NewBuffer, [Msg | Messages], msgpack)
   end;
 deserialize_text(Buffer, Messages, json) ->
-  %% is it possible to check the data here ?
-  %% length and stuff, yet should not be needed
-  Msg = jsx:decode(Buffer, [return_maps, {labels, attempt_atom}]),
-  {[sbp_converter:to_erl(Msg) | Messages], <<"">>};
+    case jsx:is_json(Buffer) of
+        true ->
+            Msg = jsx:decode(Buffer, [return_maps, {labels, attempt_atom}]),
+            {[sbp_converter:to_erl(Msg) | Messages], <<"">>};
+        false ->
+            {Messages, Buffer}
+    end;
 deserialize_text(Buffer, _Messages, json_batched) ->
   Wamps = binary:split(Buffer, [?JSONB_SEPARATOR], [global, trim]),
   Dec = fun(M, List) ->
