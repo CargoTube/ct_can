@@ -12,7 +12,7 @@
 -export([to_wamp/1, to_erl/1]).
 
 
-%% TODO:  hartbeat
+%% TODO:  heartbeat
 
 to_wamp(ErlWamp) ->
     true = sbp_validator:is_valid_message(ErlWamp),
@@ -24,15 +24,13 @@ to_erl(WampMsg) ->
     ErlMsg.
 
 msg_to_wamp(#{type := hello, realm := Realm, details := Details}) ->
-    [?HELLO, Realm, hello_dict_to_wamp(Details)];
+    [?HELLO, Realm, Details];
 msg_to_wamp(#{type := welcome, session_id := SessionId, details := Details}) ->
-    [?WELCOME, SessionId, dict_to_wamp(Details)];
-%% msg_to_wamp({type := heartbeat, IncomingSeq, OutgoingSeq}) ->
-%%     [?HEARTBEAT, IncomingSeq, OutgoingSeq];
+    [?WELCOME, SessionId, Details];
 msg_to_wamp(#{type := abort, details := Details, reason := Reason}) ->
-    [?ABORT, dict_to_wamp(Details), error_to_wamp(Reason)];
+    [?ABORT, Details, error_to_wamp(Reason)];
 msg_to_wamp(#{type := goodbye, details := Details, reason := Reason}) ->
-    [?GOODBYE, dict_to_wamp(Details), error_to_wamp(Reason)];
+    [?GOODBYE, Details, error_to_wamp(Reason)];
 msg_to_wamp(#{type := error, request_type := AtomType, request_id := RequestId,
           details := Details, error := Error,
           arguments_kw := ArgumentsKw} = Msg)
@@ -54,23 +52,23 @@ msg_to_wamp(#{type := publish, request_id := RequestId, options := Options,
           topic := Topic, arguments_kw := ArgumentsKw} = Msg)
   when is_map(ArgumentsKw), map_size(ArgumentsKw) > 0 ->
         Arguments = maps:get(arguments, Msg, []),
-        [?PUBLISH, RequestId, dict_to_wamp(Options), Topic, Arguments,
+        [?PUBLISH, RequestId, Options, Topic, Arguments,
          ArgumentsKw];
 msg_to_wamp(#{type := publish, request_id := RequestId, options := Options,
           topic := Topic, arguments := Arguments})
   when is_list(Arguments), length(Arguments) > 0 ->
-        [?PUBLISH, RequestId, dict_to_wamp(Options), Topic, Arguments];
+        [?PUBLISH, RequestId, Options, Topic, Arguments];
 msg_to_wamp(#{type := publish, request_id := RequestId, options := Options,
           topic := Topic}) ->
-    [?PUBLISH, RequestId, dict_to_wamp(Options), Topic];
+    [?PUBLISH, RequestId, Options, Topic];
 msg_to_wamp({publish, RequestId, Options, Topic, Arguments, ArgumentsKw}) ->
-    [?PUBLISH, RequestId, dict_to_wamp(Options), Topic, Arguments, ArgumentsKw];
+    [?PUBLISH, RequestId, Options, Topic, Arguments, ArgumentsKw];
 msg_to_wamp(#{type := published, request_id := RequestId,
           publication_id := PublicationId}) ->
     [?PUBLISHED, RequestId, PublicationId];
 msg_to_wamp(#{type := subscribe, request_id := RequestId, options := Options,
           topic := Topic}) ->
-    [?SUBSCRIBE, RequestId, dict_to_wamp(Options), Topic];
+    [?SUBSCRIBE, RequestId, Options, Topic];
 msg_to_wamp(#{type := subscribed, request_id := RequestId,
           subscription_id := SubscriptionId}) ->
     [?SUBSCRIBED, RequestId, SubscriptionId];
@@ -84,43 +82,43 @@ msg_to_wamp(#{type := event, subscription_id := SubscriptionId,
           arguments_kw := ArgumentsKw} = Msg)
   when is_map(ArgumentsKw), map_size(ArgumentsKw) > 0 ->
     Arguments = maps:get(arguments, Msg, []),
-    [?EVENT, SubscriptionId, PublicationId, dict_to_wamp(Details), Arguments,
+    [?EVENT, SubscriptionId, PublicationId, Details, Arguments,
      ArgumentsKw];
 msg_to_wamp(#{type := event, subscription_id := SubscriptionId,
           publication_id := PublicationId, details := Details,
           arguments := Arguments})
   when is_list(Arguments), length(Arguments) > 0 ->
-    [?EVENT, SubscriptionId, PublicationId, dict_to_wamp(Details), Arguments];
+    [?EVENT, SubscriptionId, PublicationId, Details, Arguments];
 msg_to_wamp(#{type := event, subscription_id := SubscriptionId,
           publication_id := PublicationId, details := Details}) ->
-    [?EVENT, SubscriptionId, PublicationId, dict_to_wamp(Details)];
+    [?EVENT, SubscriptionId, PublicationId, Details];
 msg_to_wamp(#{type := call, request_id := RequestId, options := Options,
           procedure := Procedure, arguments_kw := ArgumentsKw} = Msg)
   when is_map(ArgumentsKw), map_size(ArgumentsKw) > 0 ->
     Arguments = maps:get(arguments, Msg, []),
-    [?CALL, RequestId, dict_to_wamp(Options), Procedure, Arguments,
+    [?CALL, RequestId, Options, Procedure, Arguments,
      ArgumentsKw];
 msg_to_wamp(#{type := call, request_id := RequestId, options := Options,
           procedure := Procedure, arguments := Arguments})
   when is_list(Arguments), length(Arguments) > 0 ->
-    [?CALL, RequestId, dict_to_wamp(Options), Procedure, Arguments];
+    [?CALL, RequestId, Options, Procedure, Arguments];
 msg_to_wamp(#{type := call, request_id := RequestId, options := Options,
           procedure := Procedure}) ->
-    [?CALL, RequestId, dict_to_wamp(Options), Procedure];
+    [?CALL, RequestId, Options, Procedure];
 msg_to_wamp(#{type := result, request_id := RequestId, details := Details,
          arguments_kw := ArgumentsKw} = Msg)
   when is_map(ArgumentsKw), map_size(ArgumentsKw) > 0 ->
     Arguments = maps:get(arguments, Msg, []),
-    [?RESULT, RequestId, dict_to_wamp(Details), Arguments, ArgumentsKw];
+    [?RESULT, RequestId, Details, Arguments, ArgumentsKw];
 msg_to_wamp(#{type := result, request_id := RequestId, details := Details,
          arguments := Arguments})
   when is_list(Arguments), length(Arguments) > 0 ->
-    [?RESULT, RequestId, dict_to_wamp(Details), Arguments];
+    [?RESULT, RequestId, Details, Arguments];
 msg_to_wamp(#{type := result, request_id := RequestId, details := Details}) ->
-    [?RESULT, RequestId, dict_to_wamp(Details)];
+    [?RESULT, RequestId, Details];
 msg_to_wamp(#{type := register, request_id := RequestId, options := Options,
           procedure := Procedure}) ->
-    [?REGISTER, RequestId, dict_to_wamp(Options), Procedure];
+    [?REGISTER, RequestId, Options, Procedure];
 msg_to_wamp(#{type := registered, request_id := RequestId,
           registration_id := RegistrationId}) ->
     [?REGISTERED, RequestId, RegistrationId];
@@ -134,42 +132,44 @@ msg_to_wamp(#{type := invocation, request_id := RequestId,
          arguments_kw := ArgumentsKw} = Msg)
   when is_map(ArgumentsKw), map_size(ArgumentsKw) > 0 ->
     Arguments = maps:get(arguments, Msg, []),
-    [?INVOCATION, RequestId, RegistrationId, dict_to_wamp(Details), Arguments,
+    [?INVOCATION, RequestId, RegistrationId, Details, Arguments,
     ArgumentsKw];
 msg_to_wamp(#{type := invocation, request_id := RequestId,
          registration_id := RegistrationId, details := Details,
          arguments := Arguments})
   when is_list(Arguments), length(Arguments) > 0 ->
-    [?INVOCATION, RequestId, RegistrationId, dict_to_wamp(Details), Arguments];
+    [?INVOCATION, RequestId, RegistrationId, Details, Arguments];
 msg_to_wamp(#{type := invocation, request_id := RequestId,
          registration_id := RegistrationId, details := Details}) ->
-    [?INVOCATION, RequestId, RegistrationId, dict_to_wamp(Details)];
+    [?INVOCATION, RequestId, RegistrationId, Details];
 msg_to_wamp(#{type := yield, request_id := RequestId, options := Options,
          arguments_kw := ArgumentsKw} = Msg)
   when is_map(ArgumentsKw), map_size(ArgumentsKw) > 0 ->
     Arguments = maps:get(arguments, Msg, []),
-    [?YIELD, RequestId, dict_to_wamp(Options), Arguments, ArgumentsKw];
+    [?YIELD, RequestId, Options, Arguments, ArgumentsKw];
 msg_to_wamp(#{type := yield, request_id := RequestId, options := Options,
          arguments := Arguments})
   when is_list(Arguments), length(Arguments) > 0 ->
-    [?YIELD, RequestId, dict_to_wamp(Options), Arguments];
+    [?YIELD, RequestId, Options, Arguments];
 msg_to_wamp(#{type := yield, request_id := RequestId, options := Options}) ->
-    [?YIELD, RequestId, dict_to_wamp(Options)];
+    [?YIELD, RequestId, Options];
 %% ADVANCED MESSAGES
 msg_to_wamp(#{type := challenge, auth_method := AuthMethod, extra := Extra}) ->
-    [?CHALLENGE, authmethod_to_wamp(AuthMethod), dict_to_wamp(Extra)];
+    [?CHALLENGE, authmethod_to_wamp(AuthMethod), Extra];
 msg_to_wamp(#{type := authenticate, signature := Signature, extra := Extra}) ->
-    [?AUTHENTICATE, Signature, dict_to_wamp(Extra)];
+    [?AUTHENTICATE, Signature, Extra];
 msg_to_wamp(#{type := cancel, request_id := RequestId, options := Options}) ->
-    [?CANCEL, RequestId, dict_to_wamp(Options)];
+    [?CANCEL, RequestId, Options];
 msg_to_wamp(#{type := interrupt, request_id := RequestId,
               options := Options}) ->
-    [?INTERRUPT, RequestId, dict_to_wamp(Options)].
+    [?INTERRUPT, RequestId, Options].
+%% msg_to_wamp({type := heartbeat, IncomingSeq, OutgoingSeq}) ->
+%%     [?HEARTBEAT, IncomingSeq, OutgoingSeq];
 
 
 
 msg_to_erl([?HELLO, Realm, Details]) ->
-    #{type => hello, realm => Realm, details => hello_dict_to_erl(Details)};
+    #{type => hello, realm => Realm, details => dict_to_erl(Details)};
 msg_to_erl([?WELCOME, SessionId, Details]) ->
     #{type => welcome, session_id => SessionId,
       details => dict_to_erl(Details)};
@@ -179,11 +179,6 @@ msg_to_erl([?ABORT, Details, Reason]) ->
 msg_to_erl([?GOODBYE, Details, Reason]) ->
     #{type => goodbye, details => dict_to_erl(Details),
       reason => try_error_to_erl(Reason)};
-%% msg_to_erl([?HEARTBEAT, IncomingSeq, OutgoingSeq, _Discard]) ->
-%%     msg_to_erl([?HEARTBEAT, IncomingSeq, OutgoingSeq]);
-%% msg_to_erl([?HEARTBEAT, IncomingSeq, OutgoingSeq]) ->
-%%     #{type => heartbeat, sequence_in => IncomingSeq,
-%%       sequence_out => OutgoingSeq};
 msg_to_erl([?ERROR, RequestType, RequestId, Details, Error, Arguments,
             ArgumentsKw]) ->
     ErlType = request_type_to_atom(RequestType),
@@ -295,137 +290,55 @@ msg_to_erl([?CANCEL, RequestId, Options]) ->
     #{type => cancel, request_id => RequestId, options => dict_to_erl(Options)};
 msg_to_erl([?INTERRUPT, RequestId, Options]) ->
     #{type => interrupt, request_id => RequestId,
-      options => dict_to_erl(Options)}.
+      options => dict_to_erl(Options)};
+msg_to_erl(#{type := ping} = Ping) ->
+    Ping;
+msg_to_erl(#{type := pong} = Pong) ->
+    Pong.
+%% msg_to_erl([?HEARTBEAT, IncomingSeq, OutgoingSeq, _Discard]) ->
+%%     msg_to_erl([?HEARTBEAT, IncomingSeq, OutgoingSeq]);
+%% msg_to_erl([?HEARTBEAT, IncomingSeq, OutgoingSeq]) ->
+%%     #{type => heartbeat, sequence_in => IncomingSeq,
+%%       sequence_out => OutgoingSeq};
 
-
-%% @private
-dict_to_erl(Dict) ->
-    convert_dict(default, Dict, to_erl).
-
-%% @private
-dict_to_wamp(Dict) ->
-    convert_dict(default, Dict, to_wamp).
-%% @private
-hello_dict_to_erl(Dict) ->
-    convert_dict(hello, Dict, to_erl).
-
-%% @private
-hello_dict_to_wamp(Dict) ->
-    convert_dict(hello, Dict, to_wamp).
 
 %% @private
 try_error_to_erl(Error) ->
-    case error_to_erl(Error) of
-        {unknown_error, Error} ->
-            Error;
-        ErlError ->
-            ErlError
-    end.
+    convert_value(to_erl, Error, ?ERROR_MAPPING).
 
-%% @private
-error_to_erl(Error) ->
-    convert_error(to_erl, Error).
 
 %% @private
 error_to_wamp(Error) ->
-    convert_error(to_wamp, Error).
+    convert_value(to_wamp, Error, ?ERROR_MAPPING).
 
-%% @private
-convert_error(Direction, Error) ->
-    KeyPos =
-    case Direction of
-        to_erl -> 2;
-        to_wamp -> 1
-    end,
-    {ErlError, WampError} =
-    case lists:keyfind(Error, KeyPos, ?ERROR_MAPPING) of
-        {EE, WE} -> {EE, WE};
-        false -> {Error, Error}
-    end,
-    case Direction of
-        to_erl ->
-            case is_atom(ErlError) of
-                true ->
-                    ErlError;
-                false ->
-                    {unknown_error, WampError}
-            end;
-        to_wamp ->
-            case is_atom(WampError) of
-                true ->
-                    <<"wamp.error.internal">>;
-                false ->
-                    WampError
-            end
+dict_to_erl(Dict) when is_map(Dict) ->
+    value_to_erl(Dict).
+
+value_to_erl(Map) when is_map (Map) ->
+    PropList = maps:to_list(Map),
+    Convert = fun({Key, Value}, NewMap) ->
+                NewKey = try_to_atom(Key),
+                NewValue = value_to_erl(Value),
+                maps:put(NewKey, NewValue, NewMap)
+              end,
+    lists:foldl(Convert, #{}, PropList);
+value_to_erl(Binary) when is_binary(Binary) ->
+    try_to_atom(Binary);
+value_to_erl(List) when is_list(List) ->
+    Convert = fun(Element, NewList) ->
+                      NewElement = value_to_erl(Element),
+                      [NewElement | NewList]
+              end,
+    lists:reverse(lists:foldl(Convert, [], List));
+value_to_erl(N) when is_number(N) ->
+    N.
+
+try_to_atom(Binary) when is_binary(Binary) ->
+    try binary_to_existing_atom(Binary, utf8) of
+        Atom -> Atom
+    catch _:_ ->
+             Binary
     end.
-
-%% @private
-convert_dict(Type, PropList, Direction) when is_list(PropList) ->
-    Map = maps:from_list(PropList),
-    convert_dict(Type, Map, Direction);
-convert_dict(Type, Map, Direction) ->
-    Mapping = case Type of
-                  hello -> ?HELLO_MAPPING;
-                  roles -> ?HELLO_MAPPING;
-                  _ -> ?DICT_MAPPING
-              end,
-    Folding = fun(Key, Value, InMap) ->
-                      {ConvKey, ConvValue} =
-                      convert_key_value(Direction, Key, Value, Mapping),
-                      maps:put(ConvKey, ConvValue, InMap)
-              end,
-    maps:fold(Folding, #{}, Map).
-
-%% @private
-convert_key_value(Direction, Key, Value, Mapping) ->
-    KeyPos = key_pos(Direction),
-    {ErlKey, WampKey, Deep} =
-    case lists:keyfind(Key, KeyPos, Mapping) of
-        {Ek, Wk, D} -> {Ek, Wk, D};
-        {Ek, Wk} -> {Ek, Wk, false};
-        false -> {Key, Key, false}
-    end,
-    ConvValue =
-    case Deep of
-        dict -> convert_dict(ErlKey, Value, Direction);
-        list -> convert_list(Direction, Value, [], Mapping);
-        value -> convert_value(Direction, Value, Mapping);
-        _ -> Value
-    end,
-    ConvKey = convert(Direction, {ErlKey, WampKey}),
-    {ConvKey, ConvValue}.
-
-%% @private
-convert_list(_, [], [], _) -> [];
-convert_list(_, [], Converted, _) -> lists:reverse(Converted);
-convert_list(Direction, [Key | T], Converted, Mapping) ->
-    KeyPos = key_pos(Direction),
-    Keys =
-    case lists:keyfind(Key, KeyPos, Mapping) of
-        {Ek, Wk, _} -> {Ek, Wk};
-        false -> {Key, Key}
-    end,
-    ConvKey = convert(Direction, Keys),
-    convert_list(Direction, T, [ConvKey | Converted], Mapping).
-
-%% @private
-convert_value(Direction, Value, Mapping) ->
-    ValPos = value_pos(Direction),
-    ValueTuple = case lists:keyfind(Value, ValPos, Mapping) of
-                     {EV, WV, _} -> {EV, WV};
-                     {EV, WV} -> {EV, WV};
-                     false -> {Value, Value}
-                 end,
-    convert(Direction, ValueTuple).
-
--define(REQUEST_TYPE_MAPPING,
-        [{?SUBSCRIBE, subscribe},
-        {?UNSUBSCRIBE, unsubscribe},
-        {?PUBLISH, publish},
-        {?REGISTER, register},
-        {?UNREGISTER, unregister},
-        {?CALL, call},
-        {?INVOCATION, invocation}]).
 
 authmethod_to_erl(Method) ->
     convert_value(to_erl, Method, ?AUTH_METHOD_MAPPING).
@@ -448,6 +361,14 @@ key_pos(to_erl) ->
     2;
 key_pos(to_wamp) ->
     1.
+convert_value(Direction, Value, Mapping) ->
+    ValPos = value_pos(Direction),
+    ValueTuple = case lists:keyfind(Value, ValPos, Mapping) of
+                     {EV, WV, _} -> {EV, WV};
+                     {EV, WV} -> {EV, WV};
+                     false -> {Value, Value}
+                 end,
+    convert(Direction, ValueTuple).
 
 convert(to_erl, {ErlVal, _}) ->
     ErlVal;
