@@ -48,6 +48,12 @@ is_valid_entry({details, Details}) ->
     is_valid_dict(Details);
 is_valid_entry({options, Options}) ->
     is_valid_dict(Options);
+is_valid_entry({auth_method, AuthMethod}) ->
+    is_binary(AuthMethod) or is_atom(AuthMethod);
+is_valid_entry({signature, Signature}) ->
+    is_binary(Signature);
+is_valid_entry({extra, Extra}) ->
+    is_valid_dict(Extra);
 is_valid_entry({arguments, Args}) ->
     is_valid_arguments(Args);
 is_valid_entry({arguments_kw, ArgsKw}) ->
@@ -58,7 +64,9 @@ is_valid_type(Type) ->
     ValidTypes = [hello, welcome, abort, goodbye, error, publish, published,
                  subscribe, subscribed, unsubscribe, unsubscribed, event, call,
                  result, register, registered, unregister, unregistered,
-                 invocation, yield],
+                 invocation, yield,
+
+                 challenge, authenticate, cancel, interrupt],
     lists:member(Type, ValidTypes).
 
 is_valid_request_type(Type) ->
@@ -80,35 +88,39 @@ is_valid_arguments(_) -> false.
 is_valid_argumentskw(ArgumentsKw) when is_map(ArgumentsKw) -> true;
 is_valid_argumentskw(_) -> false.
 
--define(FIELD_MAPPING,[
-                       {hello, [realm, details],[]},
-                       {welcome, [session_id, details],[]},
-                       {abort, [details, reason],[]},
-                       {goodbye, [details, reason],[]},
+-define(FIELD_MAPPING, [
+                       {hello, [realm, details], []},
+                       {welcome, [session_id, details], []},
+                       {abort, [details, reason], []},
+                       {goodbye, [details, reason], []},
                        {error, [request_type, request_id, details, error],
                         [arguments, arguments_kw]},
                        {publish, [request_id, options, topic],
                         [arguments, arguments_kw]},
-                       {published, [request_id, publication_id],[]},
-                       {subscribe, [request_id, options, topic],[]},
-                       {subscribed, [request_id, subscription_id],[]},
-                       {unsubscribe, [request_id, subscription_id],[]},
-                       {unsubscribed, [request_id],[]},
+                       {published, [request_id, publication_id], []},
+                       {subscribe, [request_id, options, topic], []},
+                       {subscribed, [request_id, subscription_id], []},
+                       {unsubscribe, [request_id, subscription_id], []},
+                       {unsubscribed, [request_id], []},
                        {event, [subscription_id, publication_id, details],
                         [arguments, arguments_kw]},
                        {call, [request_id, options, procedure],
                         [arguments, arguments_kw]},
                        {result, [request_id, details],
                         [arguments, arguments_kw]},
-                       {register, [request_id, options, procedure],[]},
-                       {registered, [request_id, registration_id],[]},
-                       {unregister, [request_id, registration_id],[]},
-                       {unregistered, [request_id],[]},
+                       {register, [request_id, options, procedure], []},
+                       {registered, [request_id, registration_id], []},
+                       {unregister, [request_id, registration_id], []},
+                       {unregistered, [request_id], []},
                        {invocation, [request_id, registration_id, details],
                         [arguments, arguments_kw]},
                        {yield, [request_id, options],
                         [arguments, arguments_kw]},
-                       end_of_list
+                       %% ADVANCED MESSAGES
+                       {challenge, [auth_method, extra], []},
+                       {authenticate, [signature, extra], []},
+                       {cancel, [request_id, options], []},
+                       {interrupt, [request_id, options], []}
                       ]).
 
 
