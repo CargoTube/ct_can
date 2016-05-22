@@ -12,7 +12,7 @@
 -export([to_wamp/1, to_erl/1]).
 
 
-%% TODO: challenge, authenticate, hartbeat, cancel, interrupt
+%% TODO:  hartbeat
 
 to_wamp(ErlWamp) ->
     true = sbp_validator:is_valid_message(ErlWamp),
@@ -25,12 +25,6 @@ to_erl(WampMsg) ->
 
 msg_to_wamp(#{type := hello, realm := Realm, details := Details}) ->
     [?HELLO, Realm, hello_dict_to_wamp(Details)];
-%% msg_to_wamp({challenge, wampcra, Extra}) ->
-%%     msg_to_wamp({challenge, <<"wampcra">>, Extra});
-%% msg_to_wamp({challenge, AuthMethod, Extra}) ->
-%%     [?CHALLENGE, AuthMethod, dict_to_wamp(Extra)];
-%% msg_to_wamp({authenticate, Signature, Extra}) ->
-%%     [?AUTHENTICATE, Signature, dict_to_wamp(Extra)];
 msg_to_wamp(#{type := welcome, session_id := SessionId, details := Details}) ->
     [?WELCOME, SessionId, dict_to_wamp(Details)];
 %% msg_to_wamp({type := heartbeat, IncomingSeq, OutgoingSeq}) ->
@@ -113,8 +107,6 @@ msg_to_wamp(#{type := call, request_id := RequestId, options := Options,
 msg_to_wamp(#{type := call, request_id := RequestId, options := Options,
           procedure := Procedure}) ->
     [?CALL, RequestId, dict_to_wamp(Options), Procedure];
-%% msg_to_wamp({cancel, RequestId, Options}) ->
-%%     [?CANCEL, RequestId, dict_to_wamp(Options)];
 msg_to_wamp(#{type := result, request_id := RequestId, details := Details,
          arguments_kw := ArgumentsKw} = Msg)
   when is_map(ArgumentsKw), map_size(ArgumentsKw) > 0 ->
@@ -152,8 +144,6 @@ msg_to_wamp(#{type := invocation, request_id := RequestId,
 msg_to_wamp(#{type := invocation, request_id := RequestId,
          registration_id := RegistrationId, details := Details}) ->
     [?INVOCATION, RequestId, RegistrationId, dict_to_wamp(Details)];
-%% msg_to_wamp({interrupt, RequestId, Options}) ->
-%%     [?INTERRUPT, RequestId, dict_to_wamp(Options)];
 msg_to_wamp(#{type := yield, request_id := RequestId, options := Options,
          arguments_kw := ArgumentsKw} = Msg)
   when is_map(ArgumentsKw), map_size(ArgumentsKw) > 0 ->
@@ -164,7 +154,19 @@ msg_to_wamp(#{type := yield, request_id := RequestId, options := Options,
   when is_list(Arguments), length(Arguments) > 0 ->
     [?YIELD, RequestId, dict_to_wamp(Options), Arguments];
 msg_to_wamp(#{type := yield, request_id := RequestId, options := Options}) ->
-    [?YIELD, RequestId, dict_to_wamp(Options)].
+    [?YIELD, RequestId, dict_to_wamp(Options)];
+%% ADVANCED MESSAGES
+msg_to_wamp(#{type := challenge, auth_method := AuthMethod, extra := Extra}) ->
+    [?CHALLENGE, authmethod_to_wamp(AuthMethod), dict_to_wamp(Extra)];
+msg_to_wamp(#{type := authenticate, signature := Signature, extra := Extra}) ->
+    [?AUTHENTICATE, Signature, dict_to_wamp(Extra)];
+msg_to_wamp(#{type := cancel, request_id := RequestId, options := Options}) ->
+    [?CANCEL, RequestId, dict_to_wamp(Options)];
+msg_to_wamp(#{type := interrupt, request_id := RequestId,
+              options := Options}) ->
+    [?INTERRUPT, RequestId, dict_to_wamp(Options)].
+
+
 
 msg_to_erl([?HELLO, Realm, Details]) ->
     #{type => hello, realm => Realm, details => hello_dict_to_erl(Details)};
@@ -174,22 +176,14 @@ msg_to_erl([?WELCOME, SessionId, Details]) ->
 msg_to_erl([?ABORT, Details, Reason]) ->
     #{type => abort, details => dict_to_erl(Details),
       reason => try_error_to_erl(Reason)};
-msg_to_erl([?CHALLENGE, <<"wampcra">>, Extra]) ->
-    msg_to_erl([?CHALLENGE, wampcra, Extra]);
-msg_to_erl([?CHALLENGE, AuthMethod, Extra]) ->
-    #{type => challenge, auth_method => AuthMethod,
-      extra => dict_to_erl(Extra)};
-msg_to_erl([?AUTHENTICATE, Signature, Extra]) ->
-    #{type => authenticate, signature => Signature,
-      extra => dict_to_erl(Extra)};
 msg_to_erl([?GOODBYE, Details, Reason]) ->
     #{type => goodbye, details => dict_to_erl(Details),
       reason => try_error_to_erl(Reason)};
-msg_to_erl([?HEARTBEAT, IncomingSeq, OutgoingSeq, _Discard]) ->
-    msg_to_erl([?HEARTBEAT, IncomingSeq, OutgoingSeq]);
-msg_to_erl([?HEARTBEAT, IncomingSeq, OutgoingSeq]) ->
-    #{type => heartbeat, sequence_in => IncomingSeq,
-      sequence_out => OutgoingSeq};
+%% msg_to_erl([?HEARTBEAT, IncomingSeq, OutgoingSeq, _Discard]) ->
+%%     msg_to_erl([?HEARTBEAT, IncomingSeq, OutgoingSeq]);
+%% msg_to_erl([?HEARTBEAT, IncomingSeq, OutgoingSeq]) ->
+%%     #{type => heartbeat, sequence_in => IncomingSeq,
+%%       sequence_out => OutgoingSeq};
 msg_to_erl([?ERROR, RequestType, RequestId, Details, Error, Arguments,
             ArgumentsKw]) ->
     ErlType = request_type_to_atom(RequestType),
@@ -251,8 +245,6 @@ msg_to_erl([?CALL, RequestId, Options, Procedure, Arguments, ArgumentsKw]) ->
     #{type => call, request_id => RequestId, options => dict_to_erl(Options),
       procedure => Procedure, arguments => Arguments,
       arguments_kw => ArgumentsKw};
-msg_to_erl([?CANCEL, RequestId, Options]) ->
-    #{type => cancel, request_id => RequestId, options => dict_to_erl(Options)};
 msg_to_erl([?RESULT, RequestId, Details]) ->
     #{type => result, request_id => RequestId, details => dict_to_erl(Details)};
 msg_to_erl([?RESULT, RequestId, Details, Arguments]) ->
@@ -284,9 +276,6 @@ msg_to_erl([?INVOCATION, RequestId, RegistrationId, Details, Arguments,
     #{type => invocation, request_id => RequestId,
       registration_id => RegistrationId, details => dict_to_erl(Details),
       arguments => Arguments, arguments_kw => ArgumentsKw};
-msg_to_erl([?INTERRUPT, RequestId, Options]) ->
-    #{type => interrupt, request_id => RequestId,
-      options => dict_to_erl(Options)};
 msg_to_erl([?YIELD, RequestId, Options]) ->
     #{type => yield, request_id => RequestId, options => dict_to_erl(Options)};
 msg_to_erl([?YIELD, RequestId, Options, Arguments]) ->
@@ -294,7 +283,19 @@ msg_to_erl([?YIELD, RequestId, Options, Arguments]) ->
       arguments => Arguments};
 msg_to_erl([?YIELD, RequestId, Options, Arguments, ArgumentsKw]) ->
     #{type => yield, request_id => RequestId, options => dict_to_erl(Options),
-      arguments => Arguments, arguments_kw => ArgumentsKw}.
+      arguments => Arguments, arguments_kw => ArgumentsKw};
+%% ADVANCED MESSAGES
+msg_to_erl([?CHALLENGE, AuthMethod, Extra]) ->
+    #{type => challenge, auth_method => authmethod_to_erl(AuthMethod),
+      extra => dict_to_erl(Extra)};
+msg_to_erl([?AUTHENTICATE, Signature, Extra]) ->
+    #{type => authenticate, signature => Signature,
+      extra => dict_to_erl(Extra)};
+msg_to_erl([?CANCEL, RequestId, Options]) ->
+    #{type => cancel, request_id => RequestId, options => dict_to_erl(Options)};
+msg_to_erl([?INTERRUPT, RequestId, Options]) ->
+    #{type => interrupt, request_id => RequestId,
+      options => dict_to_erl(Options)}.
 
 
 %% @private
@@ -381,6 +382,7 @@ convert_key_value(Direction, Key, Value, Mapping) ->
     {ErlKey, WampKey, Deep} =
     case lists:keyfind(Key, KeyPos, Mapping) of
         {Ek, Wk, D} -> {Ek, Wk, D};
+        {Ek, Wk} -> {Ek, Wk, false};
         false -> {Key, Key, false}
     end,
     ConvValue =
@@ -409,12 +411,12 @@ convert_list(Direction, [Key | T], Converted, Mapping) ->
 %% @private
 convert_value(Direction, Value, Mapping) ->
     ValPos = value_pos(Direction),
-    Values =
-    case lists:keyfind(Value, ValPos, Mapping) of
-        {EV, WV, _} -> {EV, WV};
-        false -> {Value, Value}
-    end,
-    convert(Direction, Values).
+    ValueTuple = case lists:keyfind(Value, ValPos, Mapping) of
+                     {EV, WV, _} -> {EV, WV};
+                     {EV, WV} -> {EV, WV};
+                     false -> {Value, Value}
+                 end,
+    convert(Direction, ValueTuple).
 
 -define(REQUEST_TYPE_MAPPING,
         [{?SUBSCRIBE, subscribe},
@@ -424,6 +426,12 @@ convert_value(Direction, Value, Mapping) ->
         {?UNREGISTER, unregister},
         {?CALL, call},
         {?INVOCATION, invocation}]).
+
+authmethod_to_erl(Method) ->
+    convert_value(to_erl, Method, ?AUTH_METHOD_MAPPING).
+
+authmethod_to_wamp(Method) ->
+    convert_value(to_wamp, Method, ?AUTH_METHOD_MAPPING).
 
 request_type_to_atom(RequestType) ->
     {RequestType, Atom} = lists:keyfind(RequestType, 1, ?REQUEST_TYPE_MAPPING),
