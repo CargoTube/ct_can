@@ -54,6 +54,8 @@ is_valid_entry({signature, Signature}) ->
     is_binary(Signature);
 is_valid_entry({extra, Extra}) ->
     is_valid_dict(Extra);
+is_valid_entry({payload, Payload}) ->
+    is_binary(Payload);
 is_valid_entry({arguments, Args}) ->
     is_valid_arguments(Args);
 is_valid_entry({arguments_kw, ArgsKw}) ->
@@ -66,7 +68,8 @@ is_valid_type(Type) ->
                  result, register, registered, unregister, unregistered,
                  invocation, yield,
 
-                 challenge, authenticate, cancel, interrupt],
+                 challenge, authenticate, cancel, interrupt,
+                 ping, pong],
     lists:member(Type, ValidTypes).
 
 is_valid_request_type(Type) ->
@@ -116,6 +119,9 @@ is_valid_argumentskw(_) -> false.
                         [arguments, arguments_kw]},
                        {yield, [request_id, options],
                         [arguments, arguments_kw]},
+                       %% PING, PONG
+                       {ping, [payload], []},
+                       {pong, [payload], []},
                        %% ADVANCED MESSAGES
                        {challenge, [auth_method, extra], []},
                        {authenticate, [signature, extra], []},
