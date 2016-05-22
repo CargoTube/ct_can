@@ -2,14 +2,8 @@
 -include_lib("eunit/include/eunit.hrl").
 -include("sbp_message_codes.hrl").
 
-basic_convert_test_() ->
-    Realm = <<"test.uri">>,
-    Error = <<"wamp.error.test">>,
-    Topic = <<"topic.test">>,
-    Arg = [1,2,3],
-    ArgKw = #{<<"key">> => <<"value">>},
-    Procedure = <<"test.procedure">>,
-    Msgs = [
+
+-define(MSGS, [
             {[?HELLO, Realm, #{}],
              #{type => hello, details => #{}, realm => Realm} },
             {[?WELCOME, 234, #{}],
@@ -90,18 +84,60 @@ basic_convert_test_() ->
                arguments => [], arguments_kw => ArgKw}},
             {[?GOODBYE, #{}, Error],
              #{type => goodbye, details => #{},
-               reason => Error }}
-           ],
+               reason => Error }},
+            %% ADVANCED MESSAGES
+            {[?CHALLENGE, <<"sample method">>, #{}],
+             #{type => challenge, extra => #{},
+               auth_method => <<"sample method">> }},
+            {[?CHALLENGE, <<"wampcra">>, #{}],
+             #{type => challenge, extra => #{}, auth_method => wampcra }},
+            {[?AUTHENTICATE, <<"AFFE">>, #{}],
+             #{type => authenticate, extra => #{},
+               signature => <<"AFFE">> }},
+            {[?CANCEL, 123, #{}],
+             #{type => cancel, options => #{}, request_id => 123 }},
+            {[?INTERRUPT, 123, #{}],
+             #{type => interrupt, options => #{}, request_id => 123 }}
+           ]).
 
-    TypeMappings = [
+-define(TYPE_MAPPING, [
                     {?SUBSCRIBE, subscribe},
                     {?UNSUBSCRIBE, unsubscribe},
                     {?PUBLISH, publish},
                     {?REGISTER, register},
                     {?UNREGISTER, unregister},
                     {?CALL, call},
-                    {?INVOCATION, invocation} ],
+                    {?INVOCATION, invocation} ]).
 
+basic_convert_test_() ->
+    Realm = <<"test.uri">>,
+    Error = <<"wamp.error.test">>,
+    Topic = <<"topic.test">>,
+    Arg = [1,2,3],
+    ArgKw = #{<<"key">> => <<"value">>},
+    Procedure = <<"test.procedure">>,
+
+    ConvertToErl = fun(Wamp, Exp) ->
+                           io:format("converting ~p to erl~n",[Wamp]),
+                           Erl = sbp_converter:to_erl(Wamp),
+                           io:format("   result:~p~n",[Erl]),
+                           io:format("   expecting:~p~n",[Exp]),
+                           Erl
+                   end,
+    ConvertToWamp = fun(Erl, Exp) ->
+                            io:format("converting ~p to wamp~n", [Erl]),
+                            Wamp = sbp_converter:to_wamp(Erl),
+                            io:format("   result:~p~n",[Wamp]),
+                            io:format("   expecting:~p~n",[Exp]),
+                            Wamp
+
+                    end,
+    ToErl = fun({Wamp, Exp}, List) ->
+                    [ ?_assertEqual(Exp, ConvertToErl(Wamp, Exp) ) | List]
+            end,
+    ToWamp = fun({Exp, Erl}, List) ->
+                     [ ?_assertEqual(Exp, ConvertToWamp(Erl, Exp) ) | List]
+             end,
     ToError =fun({WampType, ErlType}, List) ->
                      [{[?ERROR, WampType, 123, #{}, Error],
                        #{type => error, request_type => ErlType,
@@ -116,16 +152,9 @@ basic_convert_test_() ->
                         arguments => [], arguments_kw => ArgKw}}
                       | List]
              end,
-    AllMsgs = lists:reverse(lists:foldl(ToError, lists:reverse(Msgs),
-                                        TypeMappings)),
-    ToErl = fun({Wamp, Exp}, List) ->
-                  [ ?_assertEqual(Exp, sbp_converter:to_erl(Wamp)) | List]
-          end,
-    ToWamp = fun({Exp, Erl}, List) ->
-                  [ ?_assertEqual(Exp, sbp_converter:to_wamp(Erl)) | List]
-          end,
+    AllMsgs = lists:reverse(lists:foldl(ToError, lists:reverse(?MSGS),
+                                        ?TYPE_MAPPING)),
     ToErlList = lists:foldl(ToErl, [], AllMsgs),
     ToWampList = lists:foldl(ToWamp, [], AllMsgs),
     lists:reverse(ToErlList) ++ lists:reverse(ToWampList).
-
 
