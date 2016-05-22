@@ -321,7 +321,7 @@ value_to_erl(Map) when is_map (Map) ->
                 NewValue = value_to_erl(Value),
                 maps:put(NewKey, NewValue, NewMap)
               end,
-    lists:foldl(Convert,#{},PropList);
+    lists:foldl(Convert, #{}, PropList);
 value_to_erl(Binary) when is_binary(Binary) ->
     try_to_atom(Binary);
 value_to_erl(List) when is_list(List) ->
@@ -329,7 +329,7 @@ value_to_erl(List) when is_list(List) ->
                       NewElement = value_to_erl(Element),
                       [NewElement | NewList]
               end,
-    lists:reverse(lists:foldl(Convert,[],List));
+    lists:reverse(lists:foldl(Convert, [], List));
 value_to_erl(N) when is_number(N) ->
     N.
 
