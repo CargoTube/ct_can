@@ -1,11 +1,11 @@
 %%
 %% Copyright (c) 2014-2016 Bas Wegh
 %%
--module(sbp_converter).
+-module(sibo_proto_converter).
 -author("Bas Wegh, bwegh@github.com").
 
--include("sbp_mapping.hrl").
--include("sbp_message_codes.hrl").
+-include("sibo_proto_mapping.hrl").
+-include("sibo_proto_message_codes.hrl").
 
 
 %% API
@@ -15,12 +15,12 @@
 %% TODO:  heartbeat
 
 to_wamp(ErlWamp) ->
-    true = sbp_validator:is_valid_message(ErlWamp),
+    true = sibo_proto_validator:is_valid_message(ErlWamp),
     msg_to_wamp(ErlWamp).
 
 to_erl(WampMsg) ->
     ErlMsg = msg_to_erl(WampMsg),
-    true = sbp_validator:is_valid_message(ErlMsg),
+    true = sibo_proto_validator:is_valid_message(ErlMsg),
     ErlMsg.
 
 msg_to_wamp(#{type := hello, realm := Realm, details := Details}) ->

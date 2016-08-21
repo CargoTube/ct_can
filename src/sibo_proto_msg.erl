@@ -1,4 +1,4 @@
--module(sbp_msg).
+-module(sibo_proto_msg).
 
 -export([
          hello/2,

@@ -1,7 +1,7 @@
 %%
 %% Copyright (c) 2014-2016 Bas Wegh
 %%
--module(sbp_validator).
+-module(sibo_proto_validator).
 -author("Bas Wegh").
 
 %% API
@@ -66,9 +66,7 @@ is_valid_type(Type) ->
     ValidTypes = [hello, welcome, abort, goodbye, error, publish, published,
                  subscribe, subscribed, unsubscribe, unsubscribed, event, call,
                  result, register, registered, unregister, unregistered,
-                 invocation, yield,
-
-                 challenge, authenticate, cancel, interrupt,
+                 invocation, yield, challenge, authenticate, cancel, interrupt,
                  ping, pong],
     lists:member(Type, ValidTypes).
 

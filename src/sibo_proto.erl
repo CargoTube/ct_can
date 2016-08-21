@@ -3,9 +3,9 @@
 %%
 
 %% @private
--module(sb_proto).
+-module(sibo_proto).
 -author("Bas Wegh").
--include("sbp_mapping.hrl").
+-include("sibo_proto_mapping.hrl").
 
 -export([
          deserialize/2,
@@ -23,7 +23,7 @@ deserialize(Buffer, Encoding) ->
 
 
 serialize(WampMap, Enc) ->
-  WampMsg = sbp_converter:to_wamp(WampMap),
+  WampMsg = sibo_proto_converter:to_wamp(WampMap),
   serialize_message(WampMsg, Enc).
 
 ping(Payload) ->
@@ -55,7 +55,7 @@ deserialize_text(Buffer, Messages, json) ->
     case jsx:is_json(Buffer) of
         true ->
             Msg = jsx:decode(Buffer, [return_maps]),
-            {[sbp_converter:to_erl(Msg) | Messages], <<"">>};
+            {[sibo_proto_converter:to_erl(Msg) | Messages], <<"">>};
         false ->
             {Messages, Buffer}
     end;
@@ -105,7 +105,7 @@ deserialize_binary(Buffer, Messages, _Enc) ->
 serialize_message(Msg, msgpack) ->
   case msgpack:pack(Msg, []) of
     {error, Reason} ->
-      error(sbp_msgpack, [Reason]);
+      error(sibo_proto_msgpack, [Reason]);
     M ->
       M
   end;
@@ -146,7 +146,7 @@ to_erl_reverse(List) ->
 %% @private
 to_erl_reverse([], List) -> List;
 to_erl_reverse([H | T], Messages) ->
-  to_erl_reverse(T, [sbp_converter:to_erl(H) | Messages]).
+  to_erl_reverse(T, [sibo_proto_converter:to_erl(H) | Messages]).
 
 
 
