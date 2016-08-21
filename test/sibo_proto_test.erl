@@ -1,6 +1,6 @@
--module(sb_proto_test).
+-module(sibo_proto_test).
 -include_lib("eunit/include/eunit.hrl").
--include("sbp_message_codes.hrl").
+-include("sibo_proto_message_codes.hrl").
 
 
 -define(MSGS, [
@@ -113,7 +113,7 @@ basic_convert_test_() ->
     ConvertToErl = fun({Wamp, Exp}, List) ->
                            F = fun() ->
                                        io:format("converting ~p to erl~n",[Wamp]),
-                                       Erl = sbp_converter:to_erl(Wamp),
+                                       Erl = sibo_proto_converter:to_erl(Wamp),
                                        io:format("   result:~p~n",[Erl]),
                                        io:format("   expecting:~p~n",[Exp]),
                                        Erl
@@ -123,7 +123,7 @@ basic_convert_test_() ->
     ConvertToWamp = fun({Exp, Erl}, List) ->
                             F = fun() ->
                                         io:format("converting ~p to wamp~n", [Erl]),
-                                        Wamp = sbp_converter:to_wamp(Erl),
+                                        Wamp = sibo_proto_converter:to_wamp(Erl),
                                         io:format("   result:~p~n",[Wamp]),
                                         io:format("   expecting:~p~n",[Exp]),
                                         Wamp
@@ -137,7 +137,7 @@ basic_convert_test_() ->
 
 deserialize_hello_json_test() ->
     WampMsg = <<"[1,\"test\",{\"roles\":{\"publisher\":{}}}]">>,
-    {[Hello], Buffer} = sb_proto:deserialize(WampMsg, json),
+    {[Hello], Buffer} = sibo_proto:deserialize(WampMsg, json),
     ?assertEqual(<<>>, Buffer),
     ?assertEqual(#{type=>hello, realm => <<"test">>,
                    details => #{roles => #{publisher => #{}}}}, Hello).
@@ -145,7 +145,7 @@ deserialize_hello_json_test() ->
 deserialize_hello_msgpack_test() ->
     WampMsg = <<147,1,196,4,116,101,115,116,129,196,5,114,111,108,101,115,129,
                 196,9,112,117,98,108,105,115,104,101,114,128>>,
-    {[Hello], Buffer} = sb_proto:deserialize(WampMsg, msgpack),
+    {[Hello], Buffer} = sibo_proto:deserialize(WampMsg, msgpack),
     ?assertEqual(<<>>, Buffer),
     ?assertEqual(#{type=>hello, realm => <<"test">>,
                    details => #{roles => #{publisher => #{}}}}, Hello).
@@ -172,9 +172,9 @@ roundtrip_test(Encoding) ->
                        F = fun() ->
                                    io:format("roundtrip ~p~n",[Encoding]),
                                    io:format("in: ~p~n",[Erl]),
-                                   Data = sb_proto:serialize(Erl, Encoding),
+                                   Data = sibo_proto:serialize(Erl, Encoding),
                                    io:format("data:~p~n",[Data]),
-                                   Result = sb_proto:deserialize(Data, Encoding),
+                                   Result = sibo_proto:deserialize(Data, Encoding),
                                    io:format("out:~p~n",[Result]),
                                    Result
                            end,
@@ -213,13 +213,13 @@ basic_test(Convert) ->
 ping_pong_test() ->
     Payload = <<"this is some payload">>,
     Ping1 = <<1,0,0,1,13>>,
-    Ping2 = sb_proto:ping(Payload),
+    Ping2 = sibo_proto:ping(Payload),
     Pong1 = <<2,0,0,1,13>>,
-    Pong2 = sb_proto:pong(Payload),
-    {[PingMsg1],<<>>} = sb_proto:deserialize(Ping1, raw_json),
-    {[PingMsg2],<<>>} = sb_proto:deserialize(Ping2, raw_json),
-    {[PongMsg1],<<>>} = sb_proto:deserialize(Pong1, raw_json),
-    {[PongMsg2],<<>>} = sb_proto:deserialize(Pong2, raw_json),
+    Pong2 = sibo_proto:pong(Payload),
+    {[PingMsg1],<<>>} = sibo_proto:deserialize(Ping1, raw_json),
+    {[PingMsg2],<<>>} = sibo_proto:deserialize(Ping2, raw_json),
+    {[PongMsg1],<<>>} = sibo_proto:deserialize(Pong1, raw_json),
+    {[PongMsg2],<<>>} = sibo_proto:deserialize(Pong2, raw_json),
 
     ?assertEqual(#{type => ping, payload => <<13>>}, PingMsg1),
     ?assertEqual(#{type => ping, payload => Payload}, PingMsg2),

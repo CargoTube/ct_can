@@ -1,6 +1,6 @@
--module(sb_msg_test).
+-module(sibo_msg_test).
 -include_lib("eunit/include/eunit.hrl").
--include("sb_proto.hrl").
+-include("sibo_proto.hrl").
 
 hello_test() ->
     Msg = ?HELLO(<<"test">>,#{}),
@@ -117,7 +117,7 @@ yield_test() ->
 validate(Msg, Type) ->
     io:format("msg: ~p~n",[Msg]),
     ?assertEqual(Type, get_type(Msg)),
-    ?assertEqual(true, sbp_validator:is_valid_message(Msg)).
+    ?assertEqual(true, sibo_proto_validator:is_valid_message(Msg)).
 
 
 get_type(#{type := Type}) ->
