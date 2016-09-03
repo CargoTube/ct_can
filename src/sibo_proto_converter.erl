@@ -4,6 +4,7 @@
 -module(sibo_proto_converter).
 -author("Bas Wegh, bwegh@github.com").
 
+-include("sibo_proto_types.hrl").
 -include("sibo_proto_mapping.hrl").
 -include("sibo_proto_message_codes.hrl").
 
@@ -14,15 +15,23 @@
 
 %% TODO:  heartbeat
 
+
+-spec to_wamp(ErlWamp) -> list() when
+      ErlWamp :: sibo_msg().
 to_wamp(ErlWamp) ->
     true = sibo_proto_validator:is_valid_message(ErlWamp),
     msg_to_wamp(ErlWamp).
 
+-spec to_erl(WampMsg) -> sibo_msg() when
+      WampMsg :: list().
 to_erl(WampMsg) ->
     ErlMsg = msg_to_erl(WampMsg),
     true = sibo_proto_validator:is_valid_message(ErlMsg),
     ErlMsg.
 
+
+-spec msg_to_wamp(Msg) -> list() when
+      Msg :: sibo_msg().
 msg_to_wamp(#{type := hello, realm := Realm, details := Details}) ->
     [?HELLO, Realm, Details];
 msg_to_wamp(#{type := welcome, session_id := SessionId, details := Details}) ->
@@ -166,6 +175,8 @@ msg_to_wamp(#{type := interrupt, request_id := RequestId,
 
 
 
+-spec msg_to_erl(Msg) -> sibo_msg() when
+      Msg :: list().
 msg_to_erl([?HELLO, Realm, Details]) ->
     #{type => hello, realm => Realm, details => dict_to_erl(Details)};
 msg_to_erl([?WELCOME, SessionId, Details]) ->
@@ -300,18 +311,26 @@ msg_to_erl(#{type := pong} = Pong) ->
 %%       sequence_out => OutgoingSeq};
 
 
-%% @private
+-spec try_error_to_erl(Error) -> binary() | atom() when
+      Error :: binary().
 try_error_to_erl(Error) ->
     convert_value(to_erl, Error, ?ERROR_MAPPING).
 
 
-%% @private
+-spec error_to_wamp(Error) -> binary() when
+      Error :: binary() | atom().
 error_to_wamp(Error) ->
     convert_value(to_wamp, Error, ?ERROR_MAPPING).
 
-dict_to_erl(Dict) when is_map(Dict) ->
+
+-spec dict_to_erl(Dict)  -> map() when
+      Dict :: map().
+dict_to_erl(Dict) ->
     value_to_erl(Dict).
 
+
+-spec value_to_erl(Value) -> map() | list() | number() | binary() when
+      Value :: map() | list() | number() | binary() | atom().
 value_to_erl(Map) when is_map (Map) ->
     PropList = maps:to_list(Map),
     Convert = fun({Key, Value}, NewMap) ->
@@ -331,34 +350,45 @@ value_to_erl(List) when is_list(List) ->
 value_to_erl(N) when is_number(N) ->
     N.
 
-try_to_atom(Binary) when is_binary(Binary) ->
+
+-spec try_to_atom(Binary) -> binary() | atom() when
+      Binary :: binary().
+try_to_atom(Binary) ->
     try binary_to_existing_atom(Binary, utf8) of
         Atom -> Atom
     catch _:_ ->
              Binary
     end.
 
+
+-spec authmethod_to_erl(Method) -> binary() | atom() when
+      Method :: binary().
 authmethod_to_erl(Method) ->
     convert_value(to_erl, Method, ?AUTH_METHOD_MAPPING).
 
+-spec authmethod_to_wamp(Method) -> binary() when
+      Method :: atom().
 authmethod_to_wamp(Method) ->
     convert_value(to_wamp, Method, ?AUTH_METHOD_MAPPING).
 
+-spec request_type_to_atom(RequestType) -> atom() when
+      RequestType :: pos_integer().
 request_type_to_atom(RequestType) ->
     {RequestType, Atom} = lists:keyfind(RequestType, 1, ?REQUEST_TYPE_MAPPING),
     Atom.
 
+-spec atom_to_request_type(Atom) -> pos_integer() when
+      Atom :: atom().
 atom_to_request_type(Atom) ->
     {RequestType, Atom} = lists:keyfind(Atom, 2, ?REQUEST_TYPE_MAPPING),
     RequestType.
 
-value_pos(Direction) ->
-    key_pos(Direction).
 
-key_pos(to_erl) ->
-    2;
-key_pos(to_wamp) ->
-    1.
+
+-spec convert_value(Direction, Value, Mapping) ->  any() when
+      Direction :: to_erl | to_wamp,
+      Value :: any(),
+      Mapping :: list().
 convert_value(Direction, Value, Mapping) ->
     ValPos = value_pos(Direction),
     ValueTuple = case lists:keyfind(Value, ValPos, Mapping) of
@@ -367,8 +397,17 @@ convert_value(Direction, Value, Mapping) ->
                  end,
     convert(Direction, ValueTuple).
 
+-spec convert(Direction, Tuple) -> any() when
+      Direction :: to_erl | to_wamp,
+      Tuple :: {atom(), any()}.
 convert(to_erl, {ErlVal, _}) ->
     ErlVal;
 convert(to_wamp, {_, WampVal}) ->
     WampVal.
 
+-spec value_pos(Direction) -> 1 | 2 when
+      Direction :: to_erl | to_wamp.
+value_pos(to_erl) ->
+    2;
+value_pos(to_wamp) ->
+    1.
