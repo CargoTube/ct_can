@@ -4,6 +4,8 @@
 
 -define(HELLO(Realm, Options), sibo_proto_msg:hello(Realm, Options)).
 -define(WELCOME(SessionId, Details), sibo_proto_msg:welcome(SessionId, Details)).
+-define(CHALLENGE(AuthMethod, Extra), sibo_proto_msg:challenge(AuthMethod, Extra)).
+-define(AUTHENTICATE(Signature, Extra), sibo_proto_msg:authenticate(Signature, Extra)).
 -define(ABORT(Details, Reason), sibo_proto_msg:abort(Details, Reason)).
 -define(GOODBYE(Details, Reason), sibo_proto_msg:goodbye(Details, Reason)).
 
@@ -53,12 +55,14 @@
 -define(CALL(RequestId, Options, Procedure, Arguments, ArgumentsKw),
         sibo_proto_msg:call(RequestId, Options, Procedure, Arguments, ArgumentsKw)).
 
+-define(CANCEL(RequestId, Options), sibo_proto_msg:cancel(RequestId, Options)).
+
 -define(RESULT(RequestId, Details),
         sibo_proto_msg:result(RequestId, Details)).
 -define(RESULT(RequestId, Details, Arguments),
         sibo_proto_msg:result(RequestId, Details, Arguments)).
 -define(RESULT(RequestId, Details, Arguments, ArgumentsKw),
-        sibo_proto_msg:result(RequestId, Details, Arguments, Arguments)).
+        sibo_proto_msg:result(RequestId, Details, Arguments, ArgumentsKw)).
 
 -define(REGISTER(RequestId, Options, Procedure),
         sibo_proto_msg:register(RequestId, Options, Procedure)).
@@ -79,6 +83,8 @@
 -define(INVOCATION(RequestId, RegistrationId, Details, Arguments, ArgumentsKw),
         sibo_proto_msg:invocation(RequestId, RegistrationId, Details, Arguments,
                            ArgumentsKw)).
+
+-define(INTERRUPT(RequestId, Options), sibo_proto_msg:interrupt(RequestId, Options)).
 
 -define(YIELD(RequestId, Options),
         sibo_proto_msg:yield(RequestId, Options)).

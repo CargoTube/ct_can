@@ -49,22 +49,20 @@ msg_to_wamp(#{type := error, request_type := AtomType, request_id := RequestId,
     WampType = atom_to_request_type(AtomType),
     [?ERROR, WampType, RequestId, Details, error_to_wamp(Error)];
 msg_to_wamp(#{type := publish, request_id := RequestId, options := Options,
-          topic := Topic, arguments_kw := ArgumentsKw} = Msg)
+              topic := Topic, arguments_kw := ArgumentsKw} = Msg)
   when is_map(ArgumentsKw), map_size(ArgumentsKw) > 0 ->
-        Arguments = maps:get(arguments, Msg, []),
-        [?PUBLISH, RequestId, Options, Topic, Arguments,
-         ArgumentsKw];
+    Arguments = maps:get(arguments, Msg, []),
+    [?PUBLISH, RequestId, Options, Topic, Arguments,
+     ArgumentsKw];
 msg_to_wamp(#{type := publish, request_id := RequestId, options := Options,
-          topic := Topic, arguments := Arguments})
+              topic := Topic, arguments := Arguments})
   when is_list(Arguments), length(Arguments) > 0 ->
-        [?PUBLISH, RequestId, Options, Topic, Arguments];
+    [?PUBLISH, RequestId, Options, Topic, Arguments];
 msg_to_wamp(#{type := publish, request_id := RequestId, options := Options,
-          topic := Topic}) ->
+              topic := Topic}) ->
     [?PUBLISH, RequestId, Options, Topic];
-msg_to_wamp({publish, RequestId, Options, Topic, Arguments, ArgumentsKw}) ->
-    [?PUBLISH, RequestId, Options, Topic, Arguments, ArgumentsKw];
 msg_to_wamp(#{type := published, request_id := RequestId,
-          publication_id := PublicationId}) ->
+              publication_id := PublicationId}) ->
     [?PUBLISHED, RequestId, PublicationId];
 msg_to_wamp(#{type := subscribe, request_id := RequestId, options := Options,
           topic := Topic}) ->
@@ -364,7 +362,6 @@ key_pos(to_wamp) ->
 convert_value(Direction, Value, Mapping) ->
     ValPos = value_pos(Direction),
     ValueTuple = case lists:keyfind(Value, ValPos, Mapping) of
-                     {EV, WV, _} -> {EV, WV};
                      {EV, WV} -> {EV, WV};
                      false -> {Value, Value}
                  end,

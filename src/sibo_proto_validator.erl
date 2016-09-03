@@ -74,14 +74,19 @@ is_valid_request_type(Type) ->
     ValidTypes = [publish, subscribe, unsubscribe, call, register, unregister,
                   invocation],
     lists:member(Type, ValidTypes).
+
+is_valid_uri(Uri) when is_binary(Uri) ->
+    true;
 is_valid_uri(_Uri) ->
-    true.
+    false.
 
 is_valid_id(Id) when is_integer(Id), Id >= 0, Id < 9007199254740992 -> true;
 is_valid_id(_) -> false.
 
+is_valid_dict(Dict) when is_map(Dict) ->
+    true;
 is_valid_dict(_Dict) ->
-    true.
+    false.
 
 is_valid_arguments(Arguments) when is_list(Arguments) -> true;
 is_valid_arguments(_) -> false.

@@ -6,15 +6,19 @@ APP=sb_core
 all: compile
 
 clean:
+	$(REBAR) cover -r 
 	$(REBAR) clean
 
 eunit:
 	$(REBAR) eunit
-	$(REBAR) cover
+	$(REBAR) cover -v
 
 ct:
 	$(REBAR) ct
-	$(REBAR) cover
+	$(REBAR) cover -v
+
+tests: elvis eunit ct
+	$(REBAR) dialyzer 
 
 elvis:
 	$(REBAR) lint

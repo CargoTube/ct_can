@@ -6,6 +6,10 @@
 -define(MSGS, [
             {[?HELLO, Realm, #{}],
              #{type => hello, details => #{}, realm => Realm} },
+            {[?CHALLENGE, <<"wampcra">>, #{}],
+             #{type => challenge, auth_method => wampcra, extra => #{}} },
+            {[?AUTHENTICATE, Signature, #{}],
+             #{type => authenticate, signature => Signature, extra => #{}} },
             {[?WELCOME, 234, #{}],
              #{type => welcome, details => #{}, session_id => 234}},
             {[?ABORT, #{}, Error],
@@ -48,6 +52,10 @@
             {[?CALL, 123, #{}, Procedure, [], ArgKw],
              #{type => call, request_id => 123, options => #{},
                procedure => Procedure, arguments_kw=> ArgKw, arguments => []}},
+            {[?CANCEL, 123, #{}],
+             #{type => cancel, request_id => 123, options => #{}} },
+            {[?INTERRUPT, 123, #{}],
+             #{type => interrupt, request_id => 123, options => #{}} },
             {[?RESULT, 123, #{}],
              #{type => result, request_id => 123, details => #{}}},
             {[?RESULT, 123, #{}, Arg],
@@ -185,6 +193,7 @@ roundtrip_test(Encoding) ->
 
 basic_test(Convert) ->
     Realm = <<"test.uri">>,
+    Signature = <<"very secret">>,
     Error = <<"wamp.error.test">>,
     Topic = <<"topic.test">>,
     Arg = [1,2,3],

@@ -103,12 +103,7 @@ deserialize_binary(Buffer, Messages, _Enc) ->
 
 %% @private
 serialize_message(Msg, msgpack) ->
-  case msgpack:pack(Msg, []) of
-    {error, Reason} ->
-      error(sibo_proto_msgpack, [Reason]);
-    M ->
-      M
-  end;
+  msgpack:pack(Msg, []);
 serialize_message(Msg, msgpack_batched) ->
   serialize_message(Msg, raw_msgpack);
 serialize_message(Msg, json) ->
@@ -120,12 +115,7 @@ serialize_message(Message, raw_erlbin) ->
   Enc = term_to_binary(Message),
   add_binary_frame(Enc);
 serialize_message(Message, raw_msgpack) ->
-    Enc = case msgpack:pack(Message, []) of
-          {error, Reason} ->
-            error(Reason);
-          Msg ->
-            Msg
-        end,
+  Enc = msgpack:pack(Message, []),
   add_binary_frame(Enc);
 serialize_message(Message, raw_json) ->
   Enc = jsx:encode(Message),
