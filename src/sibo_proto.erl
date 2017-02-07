@@ -52,17 +52,16 @@ deserialize_text(Buffer, Messages, msgpack) ->
       deserialize_text(NewBuffer, [Msg | Messages], msgpack)
   end;
 deserialize_text(Buffer, Messages, json) ->
-    case jsx:is_json(Buffer) of
-        true ->
-            Msg = jsx:decode(Buffer, [return_maps]),
-            {[sibo_proto_converter:to_erl(Msg) | Messages], <<"">>};
-        false ->
+    case jsone:try_decode(Buffer, []) of
+        {ok, Msg, NewBuffer} ->
+            {[sibo_proto_converter:to_erl(Msg) | Messages], NewBuffer};
+        _ ->
             {Messages, Buffer}
     end;
 deserialize_text(Buffer, _Messages, json_batched) ->
   Wamps = binary:split(Buffer, [?JSONB_SEPARATOR], [global, trim]),
   Dec = fun(M, List) ->
-                [jsx:decode(M, [return_maps]) | List]
+                [jsone:decode(M, []) | List]
         end,
   {to_erl_reverse(lists:foldl(Dec, [], Wamps)), <<"">>};
 deserialize_text(Buffer, Messages, _) ->
@@ -82,7 +81,7 @@ deserialize_binary(<<LenType:32/unsigned-integer-big, Data/binary>> = Buffer,
                             raw_erlbin ->
                                 {ok, binary_to_term(EncMsg)};
                             raw_json ->
-                                {ok, jsx:decode(EncMsg, [return_maps])};
+                                {ok, jsone:decode(EncMsg, [])};
                             _ ->
                                 msgpack:unpack(EncMsg, [])
                         end,
@@ -107,9 +106,9 @@ serialize_message(Msg, msgpack) ->
 serialize_message(Msg, msgpack_batched) ->
   serialize_message(Msg, raw_msgpack);
 serialize_message(Msg, json) ->
-  jsx:encode(Msg);
+  jsone:encode(Msg);
 serialize_message(Msg, json_batched) ->
-  Enc = jsx:encode(Msg),
+  Enc = jsone:encode(Msg),
   <<Enc/binary, ?JSONB_SEPARATOR/binary>>;
 serialize_message(Message, raw_erlbin) ->
   Enc = term_to_binary(Message),
@@ -118,7 +117,7 @@ serialize_message(Message, raw_msgpack) ->
   Enc = msgpack:pack(Message, []),
   add_binary_frame(Enc);
 serialize_message(Message, raw_json) ->
-  Enc = jsx:encode(Message),
+  Enc = jsone:encode(Message),
   add_binary_frame(Enc).
 
 %% @private
@@ -137,6 +136,3 @@ to_erl_reverse(List) ->
 to_erl_reverse([], List) -> List;
 to_erl_reverse([H | T], Messages) ->
   to_erl_reverse(T, [sibo_proto_converter:to_erl(H) | Messages]).
-
-
-
