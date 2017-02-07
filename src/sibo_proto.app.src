@@ -12,8 +12,7 @@
    [
     kernel,
     stdlib,
-    jsx,
-    % jsone,
+    jsone,
     msgpack
    ]
   },
