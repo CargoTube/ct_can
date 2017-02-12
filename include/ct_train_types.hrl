@@ -13,7 +13,7 @@
                         details => map()}.
 -type ct_train_challenge() :: #{type => challenge,
                             auth_method => binary() | atom(),
-                            details => map()}.
+                            extra => map()}.
 -type ct_train_authenticate() :: #{type => authenticate,
                                signature => binary(),
                                extra => map()}.
