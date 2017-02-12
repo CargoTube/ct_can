@@ -48,7 +48,7 @@ published_test() ->
     validate(Msg, published).
 
 subscribe_test() ->
-    Msg = ?SUBSCRIBE(123, #{}, <<"some topic">>),
+    Msg = ?SUBSCRIBE(123, #{}, <<"some.topic">>),
     validate(Msg, subscribe).
 
 subscribed_test() ->
@@ -97,7 +97,7 @@ result_test() ->
     validate_argkw(Msg3, result).
 
 register_test() ->
-    Msg = ?REGISTER(123, #{}, <<"some topic">>),
+    Msg = ?REGISTER(123, #{}, <<"some.topic">>),
     validate(Msg, register).
 
 
