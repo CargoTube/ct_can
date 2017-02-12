@@ -76,9 +76,102 @@ is_valid_request_type(Type) ->
     lists:member(Type, ValidTypes).
 
 is_valid_uri(Uri) when is_binary(Uri) ->
-    true;
+    UriParts = binary:split(Uri, <<".">>, [global]),
+    CheckPart = fun(_Char, false) ->
+                        false;
+                   (Char, true) ->
+                        is_valid_uri_part_character(Char)
+                end,
+    CheckParts = fun(_Part, false) ->
+                         false;
+                    (<<"">>, true) ->
+                         false;
+                    (Part, true) ->
+                         Chars = binary_to_list(Part),
+                         lists:foldl(CheckPart, true, Chars)
+                 end,
+    lists:foldl(CheckParts, true, UriParts);
 is_valid_uri(_Uri) ->
     false.
+
+is_valid_uri_part_character($a) ->
+    true;
+is_valid_uri_part_character($b) ->
+    true;
+is_valid_uri_part_character($c) ->
+    true;
+is_valid_uri_part_character($d) ->
+    true;
+is_valid_uri_part_character($e) ->
+    true;
+is_valid_uri_part_character($f) ->
+    true;
+is_valid_uri_part_character($g) ->
+    true;
+is_valid_uri_part_character($h) ->
+    true;
+is_valid_uri_part_character($i) ->
+    true;
+is_valid_uri_part_character($j) ->
+    true;
+is_valid_uri_part_character($k) ->
+    true;
+is_valid_uri_part_character($l) ->
+    true;
+is_valid_uri_part_character($m) ->
+    true;
+is_valid_uri_part_character($n) ->
+    true;
+is_valid_uri_part_character($o) ->
+    true;
+is_valid_uri_part_character($p) ->
+    true;
+is_valid_uri_part_character($q) ->
+    true;
+is_valid_uri_part_character($r) ->
+    true;
+is_valid_uri_part_character($s) ->
+    true;
+is_valid_uri_part_character($t) ->
+    true;
+is_valid_uri_part_character($u) ->
+    true;
+is_valid_uri_part_character($v) ->
+    true;
+is_valid_uri_part_character($w) ->
+    true;
+is_valid_uri_part_character($x) ->
+    true;
+is_valid_uri_part_character($y) ->
+    true;
+is_valid_uri_part_character($z) ->
+    true;
+is_valid_uri_part_character($0) ->
+    true;
+is_valid_uri_part_character($1) ->
+    true;
+is_valid_uri_part_character($2) ->
+    true;
+is_valid_uri_part_character($3) ->
+    true;
+is_valid_uri_part_character($4) ->
+    true;
+is_valid_uri_part_character($5) ->
+    true;
+is_valid_uri_part_character($6) ->
+    true;
+is_valid_uri_part_character($7) ->
+    true;
+is_valid_uri_part_character($8) ->
+    true;
+is_valid_uri_part_character($9) ->
+    true;
+is_valid_uri_part_character($_) ->
+    true;
+is_valid_uri_part_character(_) ->
+    false.
+
+
 
 is_valid_id(Id) when is_integer(Id), Id >= 0, Id < 9007199254740992 -> true;
 is_valid_id(_) -> false.
