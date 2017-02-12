@@ -1,15 +1,15 @@
 %%
-%% Copyright (c) 2014-2016 Bas Wegh
+%% Copyright (c) 2014-2017 Bas Wegh
 %%
--module(sibo_proto_validator).
+-module(ct_train_cargo_check).
 -author("Bas Wegh").
 
 %% API
--export([is_valid_message/1]).
+-export([is_safe_cargo/1]).
 
 
--spec is_valid_message(map()) -> true | false.
-is_valid_message(Msg) ->
+-spec is_safe_cargo(map()) -> true | false.
+is_safe_cargo(Msg) ->
     EntryList = maps:to_list(Msg),
     ValidFields = contains_valid_fields(Msg),
     Validate = fun(Entry, Boolean) ->
@@ -156,4 +156,3 @@ validate_keys(Map, MustKeys, MayKeys) ->
               end,
     KeysLeft = lists:foldl(DropKey, KeyList, MayKeys),
     MustResult and (KeysLeft == []).
-

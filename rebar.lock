@@ -1,17 +1,5 @@
 {"1.1.0",
-[{<<"goldrush">>,
-  {git,"git://github.com/DeadZen/goldrush.git",
-       {ref,"212299233c7e7eb63a97be2777e1c05ebaa58dbe"}},
-  1},
- {<<"jsone">>,{pkg,<<"jsone">>,<<"1.4.1">>},0},
- {<<"jsx">>,
-  {git,"https://github.com/talentdeficit/jsx.git",
-       {ref,"3074d4865b3385a050badf7828ad31490d860df5"}},
-  0},
- {<<"lager">>,
-  {git,"https://github.com/basho/lager.git",
-       {ref,"46f535b856e4a30c5afed34778b2b6e23560a845"}},
-  0},
+[{<<"jsone">>,{pkg,<<"jsone">>,<<"1.4.1">>},0},
  {<<"msgpack">>,{pkg,<<"msgpack">>,<<"0.7.0">>},0},
  {<<"uri">>,{pkg,<<"uri">>,<<"0.1.0">>},0}]}.
 [
