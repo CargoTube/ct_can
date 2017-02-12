@@ -1,10 +1,8 @@
 {"1.1.0",
 [{<<"jsone">>,{pkg,<<"jsone">>,<<"1.4.1">>},0},
- {<<"msgpack">>,{pkg,<<"msgpack">>,<<"0.7.0">>},0},
- {<<"uri">>,{pkg,<<"uri">>,<<"0.1.0">>},0}]}.
+ {<<"msgpack">>,{pkg,<<"msgpack">>,<<"0.7.0">>},0}]}.
 [
 {pkg_hash,[
  {<<"jsone">>, <<"10ECFB2E2FD216D6451AF71CF14F276E063A096E15B685DE7535FD680466C9B5">>},
- {<<"msgpack">>, <<"128AE0A2227C7E7A2847C0F0F73551C268464F8C1EE96BFFB920BC0A5712B295">>},
- {<<"uri">>, <<"5B4609A8094410180C03ADA9CB04BC1C2FF1C0C2EE65A22A8C05632E4AA142D5">>}]}
+ {<<"msgpack">>, <<"128AE0A2227C7E7A2847C0F0F73551C268464F8C1EE96BFFB920BC0A5712B295">>}]}
 ].
