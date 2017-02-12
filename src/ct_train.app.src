@@ -1,10 +1,10 @@
 %%
-%% Copyright (c) 2014-2016 Bas Wegh
+%% Copyright (c) 2014-2017 Bas Wegh
 %%
 
-{application, sibo_proto,
+{application, ct_train,
  [
-  {description, "Implementation of the WAMP protocol"},
+  {description, "the train of the cargo tube"},
   {vsn,"semver"},
   {modules, []},
   {registered, []},
