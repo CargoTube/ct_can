@@ -293,7 +293,8 @@ result(RequestId, Details) ->
 result(RequestId, Details, Arguments) ->
     result(RequestId, Details, Arguments, #{}).
 
--spec result(RequestId, Details, Arguments, ArgumentsKw) -> ct_train_result() when
+-spec result(RequestId, Details, Arguments, ArgumentsKw) ->
+                    ct_train_result() when
       RequestId :: pos_integer(),
       Details :: map(),
       Arguments :: list(),
@@ -336,7 +337,8 @@ unregister(RequestId, RegistrationId) ->
 unregistered(RequestId) ->
     #{type => unregistered, request_id => RequestId}.
 
--spec invocation(RequestId, RegistrationId, Details) -> ct_train_invocation() when
+-spec invocation(RequestId, RegistrationId, Details) ->
+                        ct_train_invocation() when
       RequestId :: pos_integer(),
       RegistrationId :: pos_integer(),
       Details :: map().
