@@ -1,6 +1,6 @@
--module(ct_train_factory_test).
+-module(ct_can_factory_test).
 -include_lib("eunit/include/eunit.hrl").
--include("ct_train.hrl").
+-include("ct_can.hrl").
 
 hello_test() ->
     Msg = ?HELLO(<<"test">>,#{}),
@@ -141,7 +141,7 @@ validate(Msg, Type) ->
 validate(Msg, Type, MustKeys) ->
     io:format("msg: ~p~n",[Msg]),
     ?assertEqual(Type, get_type(Msg)),
-    ?assertEqual(true, ct_train_cargo_check:is_safe_cargo(Msg)),
+    ?assertEqual(true, ct_can_cargo_check:is_safe_cargo(Msg)),
     ContainsKey = fun(Key, Map) ->
                           io:format("  testing for key ~p~n",[Key]),
                           ?assertEqual(true, maps:is_key(Key, Map)),

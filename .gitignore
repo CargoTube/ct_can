@@ -11,3 +11,4 @@ relx
 .eunit/
 .erlang.mk
 *.d
+*~

@@ -1,7 +1,7 @@
 %%
 %% Copyright (c) 2014-2017 Bas Wegh
 %%
--module(ct_train_cargo_check).
+-module(ct_can_cargo_check).
 -author("Bas Wegh").
 
 %% API

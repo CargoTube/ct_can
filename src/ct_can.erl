@@ -2,10 +2,9 @@
 %% Copyright (c) 2014-2017 Bas Wegh
 %%
 
-%% @private
--module(ct_train).
+-module(ct_can).
 -author("Bas Wegh").
--include("ct_train_mapping.hrl").
+-include("ct_can_mapping.hrl").
 
 -export([
          load_cargo/2,
@@ -23,7 +22,7 @@ load_cargo(Buffer, Encoding) ->
 
 
 unload_cargo(WampMap, Enc) ->
-  WampMsg = ct_train_loading:unload(WampMap),
+  WampMsg = ct_can_loading:unload(WampMap),
   unload_message(WampMsg, Enc).
 
 ping(Payload) ->
@@ -54,7 +53,7 @@ load_text(Buffer, Messages, msgpack) ->
 load_text(Buffer, Messages, json) ->
     case jsone:try_decode(Buffer, []) of
         {ok, Msg, NewBuffer} ->
-            {[ct_train_loading:load(Msg) | Messages], NewBuffer};
+            {[ct_can_loading:load(Msg) | Messages], NewBuffer};
         _ ->
             {Messages, Buffer}
     end;
@@ -135,4 +134,4 @@ to_erl_reverse(List) ->
 %% @private
 to_erl_reverse([], List) -> List;
 to_erl_reverse([H | T], Messages) ->
-  to_erl_reverse(T, [ct_train_loading:load(H) | Messages]).
+  to_erl_reverse(T, [ct_can_loading:load(H) | Messages]).

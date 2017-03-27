@@ -1,12 +1,12 @@
 %%
 %% Copyright (c) 2014-2017 Bas Wegh
 %%
--module(ct_train_loading).
+-module(ct_can_loading).
 -author("Bas Wegh, bwegh@github.com").
 
--include("ct_train_types.hrl").
--include("ct_train_mapping.hrl").
--include("ct_train_codes.hrl").
+-include("ct_can_types.hrl").
+-include("ct_can_mapping.hrl").
+-include("ct_can_codes.hrl").
 
 
 %% API
@@ -17,21 +17,21 @@
 
 
 -spec unload(ErlWamp) -> list() when
-      ErlWamp :: ct_train().
+      ErlWamp :: ct_can().
 unload(ErlWamp) ->
-    true = ct_train_cargo_check:is_safe_cargo(ErlWamp),
+    true = ct_can_cargo_check:is_safe_cargo(ErlWamp),
     msg_unload(ErlWamp).
 
--spec load(WampMsg) -> ct_train() when
+-spec load(WampMsg) -> ct_can() when
       WampMsg :: list().
 load(WampMsg) ->
     ErlMsg = msg_load(WampMsg),
-    true = ct_train_cargo_check:is_safe_cargo(ErlMsg),
+    true = ct_can_cargo_check:is_safe_cargo(ErlMsg),
     ErlMsg.
 
 
 -spec msg_unload(Msg) -> list() when
-      Msg :: ct_train().
+      Msg :: ct_can().
 msg_unload(#{type := hello, realm := Realm, details := Details}) ->
     [?HELLO, Realm, Details];
 msg_unload(#{type := welcome, session_id := SessionId, details := Details}) ->
@@ -175,7 +175,7 @@ msg_unload(#{type := interrupt, request_id := RequestId,
 
 
 
--spec msg_load(Msg) -> ct_train() when
+-spec msg_load(Msg) -> ct_can() when
       Msg :: list().
 msg_load([?HELLO, Realm, Details]) ->
     #{type => hello, realm => Realm, details => dict_load(Details)};
