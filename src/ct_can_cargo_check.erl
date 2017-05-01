@@ -12,11 +12,10 @@
 is_safe_cargo(Msg) ->
     EntryList = maps:to_list(Msg),
     ValidFields = contains_valid_fields(Msg),
-    Validate = fun(Entry, Boolean) ->
-                       case Boolean of
-                           false -> false;
-                           true -> is_valid_entry(Entry)
-                       end
+    Validate = fun(_, false) ->
+                       false;
+                  (Entry, true) ->
+                       is_valid_entry(Entry)
                end,
     lists:foldl(Validate, ValidFields, EntryList).
 
@@ -228,22 +227,22 @@ is_valid_argumentskw(_) -> false.
 
 
 contains_valid_fields(#{type := Type} = Map) ->
-    case lists:keyfind(Type, 1, ?FIELD_MAPPING) of
-        {Type, MustKeys, MayKeys} ->
-            validate_keys(Map, MustKeys, MayKeys);
-        _ -> false
-    end.
+    Found = lists:keyfind(Type, 1, ?FIELD_MAPPING),
+    validate_found_keys(Found, Map).
+
+validate_found_keys({_, MustKeys, MayKeys}, Map) ->
+    validate_keys(Map, MustKeys, MayKeys);
+validate_found_keys(false, _) ->
+    false.
+
 
 
 validate_keys(Map, MustKeys, MayKeys) ->
     KeyList = lists:subtract(maps:keys(Map), [type | MustKeys]),
-    IsKey = fun(Key, Bool) ->
-                case Bool of
-                    false -> false;
-                    true -> maps:is_key(Key, Map)
-                end
-            end,
-    MustResult = lists:foldl(IsKey, true, MustKeys),
+    HasKeys = fun(Key, ValidSoFar) ->
+                      maps:is_key(Key, Map) and ValidSoFar
+              end,
+    MustResult = lists:foldl(HasKeys, true, MustKeys),
     DropKey = fun(Key, List) ->
                     lists:delete(Key, List)
               end,

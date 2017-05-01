@@ -391,11 +391,15 @@ atom_to_request_type(Atom) ->
       Mapping :: list().
 convert_value(Direction, Value, Mapping) ->
     ValPos = value_pos(Direction),
-    ValueTuple = case lists:keyfind(Value, ValPos, Mapping) of
-                     {EV, WV} -> {EV, WV};
-                     false -> {Value, Value}
-                 end,
+    Found = lists:keyfind(Value, ValPos, Mapping),
+    ValueTuple = safe_convert_value(Found, Value),
     convert(Direction, ValueTuple).
+
+safe_convert_value({EV, WV}, _Default) ->
+    {EV, WV};
+safe_convert_value(false, Default) ->
+    {Default, Default}.
+
 
 -spec convert(Direction, Tuple) -> any() when
       Direction :: load | unload,

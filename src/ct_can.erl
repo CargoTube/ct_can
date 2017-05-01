@@ -15,12 +15,18 @@
 
 -define(JSONB_SEPARATOR, <<24>>).
 
+
+%% load cargo into the can
+%% this will perform decoding of the 'cargo' and put it in an internal
+%% representation
 load_cargo(Buffer, Encoding) ->
     BinaryEncodings = [raw_msgpack, raw_json, msgpack_batched, raw_erlbin],
     IsBinaryEnc = lists:member(Encoding, BinaryEncodings),
-    load_bin_or_text(IsBinaryEnc, Buffer, Encoding).
+    load_bin_or_text_cargo(IsBinaryEnc, Buffer, Encoding).
 
-
+%% unload cargo off the can
+%% this will perform encoding of the internal representation into the
+%% desired encoding
 unload_cargo(WampMap, Enc) ->
   WampMsg = ct_can_loading:unload(WampMap),
   unload_message(WampMsg, Enc).
@@ -31,73 +37,89 @@ ping(Payload) ->
 pong(Payload) ->
     add_binary_frame(2, Payload).
 
-load_bin_or_text(true, Buffer, Encoding) ->
-    load_binary(Buffer, [], Encoding);
-load_bin_or_text(false, Buffer, Encoding) ->
-    load_text(Buffer, [], Encoding).
 
 
 %% @private
--spec load_text(Buffer :: binary(), Messages :: list(),
+load_bin_or_text_cargo(true, Buffer, Encoding) ->
+    load_binary_cargo(Buffer, [], Encoding);
+load_bin_or_text_cargo(false, Buffer, Encoding) ->
+    load_text_cargo(Buffer, [], Encoding).
+
+
+-spec load_text_cargo(Buffer :: binary(), Messages :: list(),
                        Encoding :: atom()) ->
     {[Message :: map()], NewBuffer :: binary()}.
-load_text(Buffer, Messages, msgpack) ->
-  case msgpack:unpack_stream(Buffer, []) of
-    {error, incomplete} ->
-      {to_erl_reverse(Messages), Buffer};
-    {error, Reason} ->
-      error(Reason);
-    {Msg, NewBuffer} ->
-      load_text(NewBuffer, [Msg | Messages], msgpack)
-  end;
-load_text(Buffer, Messages, json) ->
-    case jsone:try_decode(Buffer, []) of
-        {ok, Msg, NewBuffer} ->
-            {[ct_can_loading:load(Msg) | Messages], NewBuffer};
-        _ ->
-            {Messages, Buffer}
-    end;
-load_text(Buffer, _Messages, json_batched) ->
+load_text_cargo(Buffer, Messages, msgpack) ->
+    handle_msgpack_result(msgpack:unpack_stream(Buffer, []), Messages, Buffer);
+load_text_cargo(Buffer, Messages, json) ->
+    handle_json_result(jsone:try_decode(Buffer, []), Messages, Buffer);
+load_text_cargo(Buffer, _Messages, json_batched) ->
   Wamps = binary:split(Buffer, [?JSONB_SEPARATOR], [global, trim]),
   Dec = fun(M, List) ->
                 [jsone:decode(M, []) | List]
         end,
   {to_erl_reverse(lists:foldl(Dec, [], Wamps)), <<"">>};
-load_text(Buffer, Messages, _) ->
+load_text_cargo(Buffer, Messages, _) ->
   {to_erl_reverse(Messages), Buffer}.
 
+
+
 %% @private
--spec load_binary(Buffer :: binary(), Messages :: list(),
+
+handle_msgpack_result({error, incomplete}, Messages, Buffer) ->
+    {to_erl_reverse(Messages), Buffer};
+handle_msgpack_result({error, Reason}, _, _) ->
+    error(Reason);
+handle_msgpack_result({Msg, NewBuffer}, Messages, _Buffer) ->
+    load_text_cargo(NewBuffer, [Msg | Messages], msgpack).
+
+
+handle_json_result({ok, Msg, NewBuffer}, Messages, _Buffer) ->
+    {[ct_can_loading:load(Msg) | Messages], NewBuffer};
+handle_json_result(_, Messages, Buffer) ->
+    {Messages, Buffer}.
+
+
+
+-spec load_binary_cargo(Buffer :: binary(), Messages :: list(),
                          Encoding :: atom()) ->
   {[Message :: term()], NewBuffer :: binary()}.
-load_binary(<<LenType:32/unsigned-integer-big, Data/binary>> = Buffer,
+load_binary_cargo(<<LenType:32/unsigned-integer-big, Data/binary>> = Buffer,
                    Messages, Enc) ->
     <<Type:8, Len:24>> = <<LenType:32>>,
-    case {Type, byte_size(Data) >= Len} of
-        {0, true} ->
-            <<EncMsg:Len/binary, NewBuffer/binary>> = Data,
-            {ok, Msg} = case Enc of
-                            raw_erlbin ->
-                                {ok, binary_to_term(EncMsg)};
-                            raw_json ->
-                                {ok, jsone:decode(EncMsg, [])};
-                            _ ->
-                                msgpack:unpack(EncMsg, [])
-                        end,
-            load_binary(NewBuffer, [Msg | Messages], Enc);
-        {1, true} ->      %Ping
-            <<Payload:Len/binary, NewBuffer/binary>> = Data,
-            load_binary(NewBuffer, [#{type => ping, payload => Payload}
-                                           | Messages], Enc);
-        {2, true} ->      %Pong
-            <<Payload:Len/binary, NewBuffer/binary>> = Data,
-            load_binary(NewBuffer, [#{type => pong, payload => Payload}
-                                           | Messages], Enc);
-        {_, false} ->
-            {to_erl_reverse(Messages), Buffer}
-    end;
-load_binary(Buffer, Messages, _Enc) ->
+    decode_binary_cargo(Type, Len, Data, Enc, Messages, Buffer);
+load_binary_cargo(Buffer, Messages, _Enc) ->
     {to_erl_reverse(Messages), Buffer}.
+
+
+decode_binary_cargo(Type, Len, Data, Enc, Messages, _Buffer)
+  when is_integer(Len), byte_size(Data) =< Len ->
+    <<Payload:Len/binary, NewBuffer/binary>> = Data,
+    decode_binary_msg(Type, Enc, Payload, Messages, NewBuffer);
+decode_binary_cargo(_Type, Len, _Data, _Enc, Messages, Buffer)
+  when is_integer(Len) ->
+    {to_erl_reverse(Messages), Buffer}.
+
+decode_binary_msg(0, Enc, Payload, Messages, Buffer) ->
+    {ok, Msg} = binary_to_msg(Enc, Payload),
+    load_binary_cargo(Buffer, [Msg | Messages], Enc);
+decode_binary_msg(1, Enc, Payload, Messages, Buffer) ->
+    load_binary_cargo(Buffer, [#{type => ping, payload => Payload}
+                            | Messages], Enc);
+decode_binary_msg(2, Enc, Payload, Messages, Buffer) ->
+    load_binary_cargo(Buffer, [#{type => pong, payload => Payload}
+                            | Messages], Enc).
+
+binary_to_msg(raw_erlbin, Payload) ->
+    {ok, binary_to_term(Payload)};
+binary_to_msg(raw_json, Payload) ->
+    {ok, jsone:decode(Payload, [])};
+binary_to_msg(_, Payload) ->
+    msgpack:unpack(Payload, []).
+
+
+
+
 
 %% @private
 unload_message(Msg, msgpack) ->
