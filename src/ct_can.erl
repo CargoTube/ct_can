@@ -50,7 +50,9 @@ load_bin_or_text_cargo(false, Buffer, Encoding) ->
                        Encoding :: atom()) ->
     {[Message :: map()], NewBuffer :: binary()}.
 load_text_cargo(Buffer, Messages, msgpack) ->
-    handle_msgpack_result(msgpack:unpack_stream(Buffer, []), Messages, Buffer);
+    handle_msgpack_result(msgpack:unpack_stream(Buffer,
+                                                [{unpack_str, as_binary}]),
+                          Messages, Buffer);
 load_text_cargo(Buffer, Messages, json) ->
     handle_json_result(jsone:try_decode(Buffer, []), Messages, Buffer);
 load_text_cargo(Buffer, _Messages, json_batched) ->
@@ -115,7 +117,7 @@ binary_to_msg(raw_erlbin, Payload) ->
 binary_to_msg(raw_json, Payload) ->
     {ok, jsone:decode(Payload, [])};
 binary_to_msg(_, Payload) ->
-    msgpack:unpack(Payload, []).
+    msgpack:unpack(Payload, [{unpack_str, as_binary}]).
 
 
 
@@ -123,7 +125,7 @@ binary_to_msg(_, Payload) ->
 
 %% @private
 unload_message(Msg, msgpack) ->
-  msgpack:pack(Msg, []);
+  msgpack:pack(Msg, [{pack_str, from_binary}]);
 unload_message(Msg, msgpack_batched) ->
   unload_message(Msg, raw_msgpack);
 unload_message(Msg, json) ->
@@ -135,7 +137,7 @@ unload_message(Message, raw_erlbin) ->
   Enc = term_to_binary(Message),
   add_binary_frame(Enc);
 unload_message(Message, raw_msgpack) ->
-  Enc = msgpack:pack(Message, []),
+  Enc = msgpack:pack(Message, [{pack_str, from_binary}]),
   add_binary_frame(Enc);
 unload_message(Message, raw_json) ->
   Enc = jsone:encode(Message),

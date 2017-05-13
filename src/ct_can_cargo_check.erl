@@ -6,7 +6,19 @@
 
 %% API
 -export([is_safe_cargo/1]).
+-export([is_enforced_safe_cargo/1]).
+-export([get_bad_cargo_list/1]).
 
+
+-export([
+         is_valid_type/1,
+         is_valid_request_type/1,
+         is_valid_uri/1,
+         is_valid_id/1,
+         is_valid_dict/1,
+         is_valid_arguments/1,
+         is_valid_argumentskw/1
+        ]).
 
 -spec is_safe_cargo(map()) -> true | false.
 is_safe_cargo(Msg) ->
@@ -18,6 +30,31 @@ is_safe_cargo(Msg) ->
                        is_valid_entry(Entry)
                end,
     lists:foldl(Validate, ValidFields, EntryList).
+
+-spec is_enforced_safe_cargo(map()) ->  { true | false, map()}.
+is_enforced_safe_cargo(Msg) ->
+    NewMsg = enforce_valid_fields(Msg),
+    {is_safe_cargo(NewMsg), NewMsg}.
+
+
+get_bad_cargo_list(Msg) ->
+    ValidFields = contains_valid_fields(Msg),
+    EntryList = update_uri_field(ValidFields, Msg),
+    GetBadFields = fun(Entry, BadEntries) ->
+                        case is_valid_entry(Entry) of
+                            false ->
+                                [ Entry | BadEntries ];
+                            true ->
+                                BadEntries
+                        end
+                end,
+    BadEntry = case ValidFields of
+                   true -> [];
+                   false -> [fields]
+               end,
+    lists:foldl(GetBadFields, BadEntry, EntryList).
+
+
 
 update_uri_field(false, _) ->
     [];
@@ -263,6 +300,15 @@ is_valid_argumentskw(_) -> false.
                       ]).
 
 
+enforce_valid_fields(#{type := Type} = Map) ->
+    Found = lists:keyfind(Type, 1, ?FIELD_MAPPING),
+    enforce_found_valid_fields(Found, Map).
+
+enforce_found_valid_fields({_, MustKeys, MayKeys}, Map) ->
+    Keys = [ type | MustKeys ] ++ MayKeys,
+    maps:with(Keys, Map);
+enforce_found_valid_fields(false, Map) ->
+    Map.
 
 contains_valid_fields(#{type := Type} = Map) ->
     Found = lists:keyfind(Type, 1, ?FIELD_MAPPING),

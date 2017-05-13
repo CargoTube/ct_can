@@ -18,16 +18,18 @@
 
 -spec unload(ErlWamp) -> list() when
       ErlWamp :: ct_can().
-unload(ErlWamp) ->
-    true = ct_can_cargo_check:is_safe_cargo(ErlWamp),
-    msg_unload(ErlWamp).
+unload(Msg0) ->
+    {true, Msg} = ct_can_cargo_check:is_enforced_safe_cargo(Msg0),
+    msg_unload(Msg).
 
 -spec load(WampMsg) -> ct_can() when
       WampMsg :: list().
 load(WampMsg) ->
     ErlMsg = msg_load(WampMsg),
-    true = ct_can_cargo_check:is_safe_cargo(ErlMsg),
-    ErlMsg.
+    case ct_can_cargo_check:get_bad_cargo_list(ErlMsg) of
+        [] -> ErlMsg;
+        BadCargoList -> {bad_cargo, BadCargoList}
+    end.
 
 
 -spec msg_unload(Msg) -> list() when
@@ -339,6 +341,8 @@ value_load(Map) when is_map (Map) ->
                 maps:put(NewKey, NewValue, NewMap)
               end,
     lists:foldl(Convert, #{}, PropList);
+value_load(Atom) when is_atom(Atom) ->
+    Atom;
 value_load(Binary) when is_binary(Binary) ->
     try_to_atom(Binary);
 value_load(List) when is_list(List) ->
