@@ -1,13 +1,13 @@
 %%
 %% Copyright (c) 2014-2017 Bas Wegh
 %%
--module(ct_can_cargo_check).
+-module(ct_msg_validation).
 -author("Bas Wegh").
 
 %% API
--export([is_safe_cargo/1]).
--export([is_enforced_safe_cargo/1]).
--export([get_bad_cargo_list/1]).
+-export([is_valid/1]).
+-export([enforce_valid/1]).
+-export([get_bad_fields/1]).
 
 
 -export([
@@ -20,8 +20,8 @@
          is_valid_argumentskw/1
         ]).
 
--spec is_safe_cargo(map()) -> true | false.
-is_safe_cargo(Msg) ->
+-spec is_valid(map()) -> true | false.
+is_valid(Msg) ->
     ValidFields = contains_valid_fields(Msg),
     EntryList = update_uri_field(ValidFields, Msg),
     Validate = fun(_, false) ->
@@ -31,13 +31,13 @@ is_safe_cargo(Msg) ->
                end,
     lists:foldl(Validate, ValidFields, EntryList).
 
--spec is_enforced_safe_cargo(map()) ->  { true | false, map()}.
-is_enforced_safe_cargo(Msg) ->
+-spec enforce_valid(map()) ->  { true | false, map()}.
+enforce_valid(Msg) ->
     NewMsg = enforce_valid_fields(Msg),
-    {is_safe_cargo(NewMsg), NewMsg}.
+    {is_valid(NewMsg), NewMsg}.
 
 
-get_bad_cargo_list(Msg) ->
+get_bad_fields(Msg) ->
     ValidFields = contains_valid_fields(Msg),
     EntryList = update_uri_field(ValidFields, Msg),
     GetBadFields = fun(Entry, BadEntries) ->
@@ -130,8 +130,8 @@ is_valid_uri(Uri)  ->
     is_valid_uri(Uri, undefined).
 
 is_valid_uri(Uri, Type) when is_binary(Uri) ->
-    [ FirstPart | UriParts ] = binary:split(Uri, <<".">>, [global]),
-    FirstValid = is_valid_uri_beginning(FirstPart, Type),
+    UriParts = binary:split(Uri, <<".">>, [global]),
+    FirstValid = is_valid_uri_beginning(UriParts, Type),
     CheckChars = fun(_Char, false) ->
                          false;
                     (Char, true) ->
@@ -153,15 +153,17 @@ is_valid_uri(Uri, Type) when is_binary(Uri) ->
 is_valid_uri(_Uri, _Type) ->
     false.
 
-is_valid_uri_beginning(<<"cargo">>, _) ->
+is_valid_uri_beginning([<<"tube">>, <<"cargo">>|_], _) ->
     false;
-is_valid_uri_beginning(<<"cargotube">>, _) ->
+is_valid_uri_beginning([<<"cargo">>|_], _) ->
     false;
-is_valid_uri_beginning(<<"cargo-tube">>, _) ->
+is_valid_uri_beginning([<<"cargotube">>| _], _) ->
     false;
-is_valid_uri_beginning(<<"wamp">>, reason_error) ->
+is_valid_uri_beginning([<<"cargo-tube">>| _], _) ->
+    false;
+is_valid_uri_beginning([<<"wamp">>| _], reason_error) ->
     true;
-is_valid_uri_beginning(<<"wamp">>, _) ->
+is_valid_uri_beginning([<<"wamp">>| _], _) ->
     false;
 is_valid_uri_beginning(_, _) ->
     true.

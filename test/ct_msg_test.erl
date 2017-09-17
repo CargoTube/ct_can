@@ -1,6 +1,6 @@
--module(ct_can_test).
+-module(ct_msg_test).
 -include_lib("eunit/include/eunit.hrl").
--include("ct_can_codes.hrl").
+-include("ct_msg_codes.hrl").
 
 
 -define(MSGS, [
@@ -121,7 +121,7 @@ basic_convert_test_() ->
     ConvertToErl = fun({Wamp, Exp}, List) ->
                            F = fun() ->
                                        io:format("converting ~p to erl~n",[Wamp]),
-                                       Erl = ct_can_loading:load(Wamp),
+                                       Erl = ct_msg_conversion:to_internal(Wamp),
                                        io:format("   result:~p~n",[Erl]),
                                        io:format("   expecting:~p~n",[Exp]),
                                        Erl
@@ -131,7 +131,7 @@ basic_convert_test_() ->
     ConvertToWamp = fun({Exp, Erl}, List) ->
                             F = fun() ->
                                         io:format("converting ~p to wamp~n", [Erl]),
-                                        Wamp = ct_can_loading:unload(Erl),
+                                        Wamp = ct_msg_conversion:to_wamp(Erl),
                                         io:format("   result:~p~n",[Wamp]),
                                         io:format("   expecting:~p~n",[Exp]),
                                         Wamp
@@ -145,7 +145,7 @@ basic_convert_test_() ->
 
 deserialize_hello_json_test() ->
     WampMsg = <<"[1,\"test\",{\"roles\":{\"publisher\":{}}}]">>,
-    {[Hello], Buffer} = ct_can:load_cargo(WampMsg, json),
+    {[Hello], Buffer} = ct_msg:parse(WampMsg, json),
     ?assertEqual(<<>>, Buffer),
     ?assertEqual(#{type=>hello, realm => <<"test">>,
                    details => #{roles => #{publisher => #{}}}}, Hello).
@@ -153,7 +153,7 @@ deserialize_hello_json_test() ->
 deserialize_hello_msgpack_test() ->
     WampMsg = <<147,1,196,4,116,101,115,116,129,196,5,114,111,108,101,115,129,
                 196,9,112,117,98,108,105,115,104,101,114,128>>,
-    {[Hello], Buffer} = ct_can:load_cargo(WampMsg, msgpack),
+    {[Hello], Buffer} = ct_msg:parse(WampMsg, msgpack),
     ?assertEqual(<<>>, Buffer),
     ?assertEqual(#{type=>hello, realm => <<"test">>,
                    details => #{roles => #{publisher => #{}}}}, Hello).
@@ -180,9 +180,9 @@ roundtrip_test(Encoding) ->
                        F = fun() ->
                                    io:format("roundtrip ~p~n",[Encoding]),
                                    io:format("in: ~p~n",[Erl]),
-                                   Data = ct_can:unload_cargo(Erl, Encoding),
+                                   Data = ct_msg:serialize(Erl, Encoding),
                                    io:format("data:~p~n",[Data]),
-                                   Result = ct_can:load_cargo(Data, Encoding),
+                                   Result = ct_msg:parse(Data, Encoding),
                                    io:format("out:~p~n",[Result]),
                                    Result
                            end,
@@ -240,7 +240,7 @@ basic_msgpack_test() ->
                 108,108,101,101,129,168,102,101,97,116,117,114,101,115,129,181,
                 99,97,108,108,101,114,95,105,100,101,110,116,105,102,105,99,97,
                 116,105,111,110,195>>,
-    {[Msg], <<>>} = ct_can:load_cargo(WampMsg, msgpack),
+    {[Msg], <<>>} = ct_msg:parse(WampMsg, msgpack),
     true = case Msg of
                Map when is_map(Map) ->
                    true;
@@ -259,13 +259,13 @@ basic_msgpack_test() ->
 ping_pong_test() ->
     Payload = <<"this is some payload">>,
     Ping1 = <<1,0,0,1,13>>,
-    Ping2 = ct_can:ping(Payload),
+    Ping2 = ct_msg:ping(Payload),
     Pong1 = <<2,0,0,1,13>>,
-    Pong2 = ct_can:pong(Payload),
-    {[PingMsg1],<<>>} = ct_can:load_cargo(Ping1, raw_json),
-    {[PingMsg2],<<>>} = ct_can:load_cargo(Ping2, raw_json),
-    {[PongMsg1],<<>>} = ct_can:load_cargo(Pong1, raw_json),
-    {[PongMsg2],<<>>} = ct_can:load_cargo(Pong2, raw_json),
+    Pong2 = ct_msg:pong(Payload),
+    {[PingMsg1],<<>>} = ct_msg:parse(Ping1, raw_json),
+    {[PingMsg2],<<>>} = ct_msg:parse(Ping2, raw_json),
+    {[PongMsg1],<<>>} = ct_msg:parse(Pong1, raw_json),
+    {[PongMsg2],<<>>} = ct_msg:parse(Pong2, raw_json),
 
     ?assertEqual(#{type => ping, payload => <<13>>}, PingMsg1),
     ?assertEqual(#{type => ping, payload => Payload}, PingMsg2),

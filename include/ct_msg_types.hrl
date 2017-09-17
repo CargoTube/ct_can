@@ -1,50 +1,50 @@
 
 
 
--type ct_can_type() :: hello | challenge | authenticate | welcome |
+-type ct_msg_type() :: hello | challenge | authenticate | welcome |
                          goodbye | abort | error | publish | published |
                          subscribe | subscribed | unsubscribe |
                          unsubscribed | event | call | cancel | result |
                          register | registered | unregister |
                          unregistered | invocation | interrupt | yield.
 
--type ct_can_hello() :: #{type => hello,
+-type ct_msg_hello() :: #{type => hello,
                         realm => binary(),
                         details => map()}.
--type ct_can_challenge() :: #{type => challenge,
+-type ct_msg_challenge() :: #{type => challenge,
                             auth_method => binary() | atom(),
                             extra => map()}.
--type ct_can_authenticate() :: #{type => authenticate,
+-type ct_msg_authenticate() :: #{type => authenticate,
                                signature => binary(),
                                extra => map()}.
--type ct_can_welcome() :: #{type => welcome,
+-type ct_msg_welcome() :: #{type => welcome,
                           session_id => pos_integer(),
                           details => map()}.
--type ct_can_abort() :: #{type => abort,
+-type ct_msg_abort() :: #{type => abort,
                         reason => binary() | atom(),
                         details => map()}.
--type ct_can_goodbye() :: #{type => goodbye,
+-type ct_msg_goodbye() :: #{type => goodbye,
                           reason => binary() | atom(),
                           details => map()}.
--type ct_can_error() :: #{type => error,
-                        request_type => ct_can_type(),
+-type ct_msg_error() :: #{type => error,
+                        request_type => ct_msg_type(),
                         request_id => pos_integer(),
                         details => map(),
                         error => binary() | atom()} |
                       #{type => error,
-                        request_type => ct_can_type(),
+                        request_type => ct_msg_type(),
                         request_id => pos_integer(),
                         details => map(),
                         error => binary() | atom(),
                         arguments => list()} |
                       #{type => error,
-                        request_type => ct_can_type(),
+                        request_type => ct_msg_type(),
                         request_id => pos_integer(),
                         details => map(),
                         error => binary() | atom(),
                         arguments => list(),
                         arugments_kw => map()}.
--type ct_can_publish() :: #{type => publish,
+-type ct_msg_publish() :: #{type => publish,
                           request_id => pos_integer(),
                           options => map(),
                           topic => binary()} |
@@ -59,22 +59,22 @@
                           topic => binary(),
                           arguments => list(),
                           arguments_kw => map()}.
--type ct_can_published() :: #{type => published,
+-type ct_msg_published() :: #{type => published,
                             request_id => pos_integer(),
                             publication_id => pos_integer()}.
--type ct_can_subscribe() :: #{type => subscribe,
+-type ct_msg_subscribe() :: #{type => subscribe,
                             request_id => pos_integer(),
                             options => map(),
                             topic => binary()}.
--type ct_can_subscribed() :: #{type => subscribed,
+-type ct_msg_subscribed() :: #{type => subscribed,
                              request_id => pos_integer(),
                              subscription_id => pos_integer()}.
--type ct_can_unsubscribe() :: #{type => unsubscribe,
+-type ct_msg_unsubscribe() :: #{type => unsubscribe,
                               request_id => pos_integer(),
                               subscription_id => pos_integer()}.
--type ct_can_unsubscribed() :: #{type => unsubscribed,
+-type ct_msg_unsubscribed() :: #{type => unsubscribed,
                                request_id => pos_integer()}.
--type ct_can_event() :: #{type => event,
+-type ct_msg_event() :: #{type => event,
                         subscription_id => pos_integer(),
                         publication_id => pos_integer(),
                         details => map()} |
@@ -89,7 +89,7 @@
                         details => map(),
                         arguments => list(),
                         arguments_kw => map()}.
--type ct_can_call() :: #{type => call,
+-type ct_msg_call() :: #{type => call,
                        request_id => pos_integer(),
                        procedure => binary(),
                        options => map()} |
@@ -104,10 +104,10 @@
                        options => map(),
                        arguments => list(),
                        arguments_kw => map()}.
--type ct_can_cancel() :: #{type => cancel,
+-type ct_msg_cancel() :: #{type => cancel,
                          request_id => pos_integer(),
                          options => map()}.
--type ct_can_result() :: #{type => result,
+-type ct_msg_result() :: #{type => result,
                          request_id => pos_integer(),
                          details => map()} |
                        #{type => result,
@@ -119,19 +119,19 @@
                          details => map(),
                          arguments => list(),
                          arguments_kw => map()}.
--type ct_can_register() :: #{type => register,
+-type ct_msg_register() :: #{type => register,
                            request_id => pos_integer(),
                            options => map(),
                            procedure => binary()}.
--type ct_can_registered() :: #{type => registered,
+-type ct_msg_registered() :: #{type => registered,
                              request_id => pos_integer(),
                              registration_id => pos_integer()}.
--type ct_can_unregister() :: #{type => unregister,
+-type ct_msg_unregister() :: #{type => unregister,
                              request_id => pos_integer(),
                              registration_id => pos_integer()}.
--type ct_can_unregistered() :: #{type => unregistered,
+-type ct_msg_unregistered() :: #{type => unregistered,
                                request_id => pos_integer()}.
--type ct_can_invocation() :: #{type => invocation,
+-type ct_msg_invocation() :: #{type => invocation,
                              request_id => pos_integer(),
                              registration_id => pos_integer(),
                              details => map()} |
@@ -146,10 +146,10 @@
                              details => map(),
                              arguments => list(),
                              arguments_kw => map()}.
--type ct_can_interrupt() :: #{type => interrupt,
+-type ct_msg_interrupt() :: #{type => interrupt,
                             request_id => pos_integer(),
                             options => map()}.
--type ct_can_yield() :: #{type => yield,
+-type ct_msg_yield() :: #{type => yield,
                         request_id => pos_integer(),
                         options => map()} |
                       #{type => yield,
@@ -162,28 +162,28 @@
                         arguments => list(),
                         arguments_kw => map()}.
 
--type ct_can() :: ct_can_hello() |
-                    ct_can_challenge() |
-                    ct_can_authenticate() |
-                    ct_can_welcome() |
-                    ct_can_abort() |
-                    ct_can_goodbye() |
-                    ct_can_error() |
-                    ct_can_publish() |
-                    ct_can_publish() |
-                    ct_can_published() |
-                    ct_can_subscribe() |
-                    ct_can_subscribed() |
-                    ct_can_unsubscribe() |
-                    ct_can_unsubscribed() |
-                    ct_can_event() |
-                    ct_can_call() |
-                    ct_can_cancel() |
-                    ct_can_result() |
-                    ct_can_register() |
-                    ct_can_registered() |
-                    ct_can_unregister() |
-                    ct_can_unregistered() |
-                    ct_can_invocation() |
-                    ct_can_interrupt() |
-                    ct_can_yield().
+-type ct_msg() :: ct_msg_hello() |
+                    ct_msg_challenge() |
+                    ct_msg_authenticate() |
+                    ct_msg_welcome() |
+                    ct_msg_abort() |
+                    ct_msg_goodbye() |
+                    ct_msg_error() |
+                    ct_msg_publish() |
+                    ct_msg_publish() |
+                    ct_msg_published() |
+                    ct_msg_subscribe() |
+                    ct_msg_subscribed() |
+                    ct_msg_unsubscribe() |
+                    ct_msg_unsubscribed() |
+                    ct_msg_event() |
+                    ct_msg_call() |
+                    ct_msg_cancel() |
+                    ct_msg_result() |
+                    ct_msg_register() |
+                    ct_msg_registered() |
+                    ct_msg_unregister() |
+                    ct_msg_unregistered() |
+                    ct_msg_invocation() |
+                    ct_msg_interrupt() |
+                    ct_msg_yield().

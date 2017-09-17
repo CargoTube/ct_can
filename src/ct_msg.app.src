@@ -2,9 +2,9 @@
 %% Copyright (c) 2014-2017 Bas Wegh
 %%
 
-{application, ct_can,
+{application, ct_msg,
  [
-  {description, "the can of the cargo tube"},
+  {description, "a message of cargo tube"},
   {vsn,"semver"},
   {modules, []},
   {registered, []},
