@@ -1,5 +1,5 @@
 %%
-%% Copyright (c) 2014-2016 Bas Wegh
+%% Copyright (c) 2014-2017 Bas Wegh
 %%
 
 -define(ERROR_MAPPING,
