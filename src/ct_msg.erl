@@ -29,13 +29,13 @@ parse(Buffer, Encoding) ->
 
 serialize(WampMap, Enc) ->
   WampMsg = ct_msg_conversion:to_wamp(WampMap),
-  unload_message(WampMsg, Enc).
+  serialize_message(WampMsg, Enc).
 
-ping(Payload) ->
-    add_binary_frame(1, Payload).
+ping(Paydeserialize) ->
+    add_binary_frame(1, Paydeserialize).
 
-pong(Payload) ->
-    add_binary_frame(2, Payload).
+pong(Paydeserialize) ->
+    add_binary_frame(2, Paydeserialize).
 
 
 
@@ -96,50 +96,50 @@ parse_binary(Buffer, Messages, _Enc) ->
 
 decode_binary(Type, Len, Data, Enc, Messages, _Buffer)
   when is_integer(Len), byte_size(Data) =< Len ->
-    <<Payload:Len/binary, NewBuffer/binary>> = Data,
-    decode_binary_msg(Type, Enc, Payload, Messages, NewBuffer);
+    <<Paydeserialize:Len/binary, NewBuffer/binary>> = Data,
+    decode_binary_msg(Type, Enc, Paydeserialize, Messages, NewBuffer);
 decode_binary(_Type, Len, _Data, _Enc, Messages, Buffer)
   when is_integer(Len) ->
     {to_erl_reverse(Messages), Buffer}.
 
-decode_binary_msg(0, Enc, Payload, Messages, Buffer) ->
-    {ok, Msg} = binary_to_msg(Enc, Payload),
+decode_binary_msg(0, Enc, Paydeserialize, Messages, Buffer) ->
+    {ok, Msg} = binary_to_msg(Enc, Paydeserialize),
     parse_binary(Buffer, [Msg | Messages], Enc);
-decode_binary_msg(1, Enc, Payload, Messages, Buffer) ->
-    parse_binary(Buffer, [{ping, Payload}
+decode_binary_msg(1, Enc, Paydeserialize, Messages, Buffer) ->
+    parse_binary(Buffer, [{ping, Paydeserialize}
                             | Messages], Enc);
-decode_binary_msg(2, Enc, Payload, Messages, Buffer) ->
-    parse_binary(Buffer, [{pong, Payload}
+decode_binary_msg(2, Enc, Paydeserialize, Messages, Buffer) ->
+    parse_binary(Buffer, [{pong, Paydeserialize}
                             | Messages], Enc).
 
-binary_to_msg(raw_erlbin, Payload) ->
-    {ok, binary_to_term(Payload)};
-binary_to_msg(raw_json, Payload) ->
-    {ok, jsone:decode(Payload, [])};
-binary_to_msg(_, Payload) ->
-    msgpack:unpack(Payload, [{unpack_str, as_binary}]).
+binary_to_msg(raw_erlbin, Paydeserialize) ->
+    {ok, binary_to_term(Paydeserialize)};
+binary_to_msg(raw_json, Paydeserialize) ->
+    {ok, jsone:decode(Paydeserialize, [])};
+binary_to_msg(_, Paydeserialize) ->
+    msgpack:unpack(Paydeserialize, [{unpack_str, as_binary}]).
 
 
 
 
 
 %% @private
-unload_message(Msg, msgpack) ->
+serialize_message(Msg, msgpack) ->
   msgpack:pack(Msg, [{pack_str, from_binary}]);
-unload_message(Msg, msgpack_batched) ->
-  unload_message(Msg, raw_msgpack);
-unload_message(Msg, json) ->
+serialize_message(Msg, msgpack_batched) ->
+  serialize_message(Msg, raw_msgpack);
+serialize_message(Msg, json) ->
   jsone:encode(Msg);
-unload_message(Msg, json_batched) ->
+serialize_message(Msg, json_batched) ->
   Enc = jsone:encode(Msg),
   <<Enc/binary, ?JSONB_SEPARATOR/binary>>;
-unload_message(Message, raw_erlbin) ->
+serialize_message(Message, raw_erlbin) ->
   Enc = term_to_binary(Message),
   add_binary_frame(Enc);
-unload_message(Message, raw_msgpack) ->
+serialize_message(Message, raw_msgpack) ->
   Enc = msgpack:pack(Message, [{pack_str, from_binary}]),
   add_binary_frame(Enc);
-unload_message(Message, raw_json) ->
+serialize_message(Message, raw_json) ->
   Enc = jsone:encode(Message),
   add_binary_frame(Enc).
 

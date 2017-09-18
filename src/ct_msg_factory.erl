@@ -122,12 +122,12 @@ error(RequestType, RequestId, Details, Error, Arguments) ->
       ArgumentsKw :: map().
 error(RequestType, RequestId, Details, Error, Arguments, ArgumentsKw)
   when is_map(ArgumentsKw), map_size(ArgumentsKw) > 0 ->
-    {error,   RequestType, RequestId, Details, Error, Arguments, ArgumentsKw};
+    {error, RequestType, RequestId, Details, Error, Arguments, ArgumentsKw};
 error(RequestType, RequestId, Details, Error, Arguments, _ArgumentsKw)
   when is_list(Arguments), length(Arguments) > 0 ->
-    {error,   RequestType, RequestId, Details, Error, Arguments};
+    {error, RequestType, RequestId, Details, Error, Arguments};
 error(RequestType, RequestId, Details, Error, _Arguments, _ArgumentsKw) ->
-    {error,   RequestType, RequestId, Details, Error}.
+    {error, RequestType, RequestId, Details, Error}.
 
 -spec publish(RequestId, Options, Topic) -> ct_msg_publish() when
       RequestId :: pos_integer(),

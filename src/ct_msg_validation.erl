@@ -7,7 +7,7 @@
 %% API
 -export([is_valid/1]).
 -export([get_bad_fields/1]).
-
+-include("ct_msg_types.hrl").
 
 -export([
          is_valid_type/1,
@@ -19,10 +19,11 @@
          is_valid_argumentskw/1
         ]).
 
--spec is_valid(map()) -> true | false.
+-spec is_valid(ct_msg()) -> true | false.
 is_valid(Msg) ->
     ValidFields = contains_valid_fields(Msg),
-    maybe_check_fields(ValidFields, Msg).
+    ValidType = is_valid_type(element(1, Msg)),
+    maybe_check_fields(ValidType and ValidFields, Msg).
 
 maybe_check_fields(true, Msg) ->
     are_fields_valid(Msg);
@@ -55,7 +56,7 @@ maybe_add_and_next_field(_, Fields, BadFields, MustKeys, MayKeys) ->
 are_fields_valid(Msg) ->
     [Type | KeyFields] = erlang:tuple_to_list(Msg),
     Found = get_field_types(Type),
-    check_fields(KeyFields, Found).
+    check_fields(KeyFields,  Found).
 
 
 check_fields([], {_, [], _}) ->
@@ -83,8 +84,6 @@ maybe_next_field(false, _, _, _) ->
 
 
 
-is_valid_entry({type, Type}) ->
-    is_valid_type(Type);
 is_valid_entry({realm, Realm}) ->
     is_valid_uri(Realm);
 is_valid_entry({topic, Topic}) ->

@@ -8,24 +8,28 @@
                          register | registered | unregister |
                          unregistered | invocation | interrupt | yield.
 
+-type ct_msg_uri() :: binary().
+-type ct_msg_error_uri() :: binary() | atom().
+-type ct_msg_authmetod() :: binary() | atom().
+
 -type ct_msg_hello() :: {hello, binary(), map()}.
--type ct_msg_challenge() :: {challenge, binary() | atom(),map()}.
+-type ct_msg_challenge() :: {challenge, ct_msg_authmetod(), map()}.
 -type ct_msg_authenticate() :: {authenticate, binary(), map()}.
 -type ct_msg_welcome() :: {welcome, pos_integer(), map()}.
--type ct_msg_abort() :: {abort, binary() | atom(), map()}.
--type ct_msg_goodbye() :: {goodbye, binary() | atom(), map()}.
+-type ct_msg_abort() :: {abort, map(), ct_msg_error_uri()}.
+-type ct_msg_goodbye() :: {goodbye, map(), ct_msg_error_uri()}.
 -type ct_msg_error() :: {error, ct_msg_type(), pos_integer(), map(),
-                          binary() | atom()} |
+                          ct_msg_error_uri()} |
                       {error, ct_msg_type(), pos_integer(), map(),
-                        binary() | atom(), list()} |
+                        ct_msg_error_uri(), list()} |
                       {error, ct_msg_type(), pos_integer(), map(),
-                        binary() | atom(), list(), map()} .
--type ct_msg_publish() :: {publish, pos_integer(), map(), binary()} |
-                          {publish, pos_integer(), map(), binary(), list()} |
-                          {publish, pos_integer(), map(), binary(), list(),
+                        ct_msg_error_uri(), list(), map()} .
+-type ct_msg_publish() :: {publish, pos_integer(), map(), ct_msg_uri()}|
+                          {publish, pos_integer(), map(), ct_msg_uri(), list()}|
+                          {publish, pos_integer(), map(), ct_msg_uri(), list(),
                            map()}.
 -type ct_msg_published() :: {published, pos_integer(), pos_integer()}.
--type ct_msg_subscribe() :: {subscribe, pos_integer(), map(), binary()}.
+-type ct_msg_subscribe() :: {subscribe, pos_integer(), map(), ct_msg_uri()}.
 -type ct_msg_subscribed() :: {subscribed, pos_integer(), pos_integer()}.
 -type ct_msg_unsubscribe() :: {unsubscribe, pos_integer(), pos_integer()}.
 -type ct_msg_unsubscribed() :: {unsubscribed, pos_integer()}.
@@ -33,14 +37,15 @@
                         {event, pos_integer(), pos_integer(), map(), list()} |
                         {event, pos_integer(), pos_integer(), map(), list(),
                          map()}.
--type ct_msg_call() :: {call, pos_integer(), binary(), map()} |
-                       {call, pos_integer(), binary(), map(), list()} |
-                       {call, pos_integer(), binary(), map(), list(), map()}.
+-type ct_msg_call() :: {call, pos_integer(), map(), ct_msg_uri()} |
+                       {call, pos_integer(), map(), ct_msg_uri(), list()} |
+                       {call, pos_integer(), map(), ct_msg_uri(), list(), map()}
+                       .
 -type ct_msg_cancel() :: {cancel, pos_integer(), map()}.
 -type ct_msg_result() :: {result, pos_integer(), map()} |
                          {result, pos_integer(), map(), list()} |
                          {result, pos_integer(), map(), list(), map()}.
--type ct_msg_register() :: {register, pos_integer(), map(), binary()}.
+-type ct_msg_register() :: {register, pos_integer(), map(), ct_msg_uri()}.
 -type ct_msg_registered() :: {registered, pos_integer(), pos_integer()}.
 -type ct_msg_unregister() :: {unregister, pos_integer(), pos_integer()}.
 -type ct_msg_unregistered() :: {unregistered, pos_integer()}.

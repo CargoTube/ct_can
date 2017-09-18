@@ -5,21 +5,21 @@
 
 -define(MSGS, [
             {[?HELLO, Realm, #{}],
-             {hello, #{}, Realm} },
+             {hello, Realm, #{}} },
             {[?CHALLENGE, <<"wampcra">>, #{}],
              {challenge, wampcra, #{}} },
             {[?AUTHENTICATE, Signature, #{}],
              {authenticate, Signature, #{}} },
             {[?WELCOME, 234, #{}],
-             {welcome, #{}, 234}},
+             {welcome, 234, #{}}},
             {[?ABORT, #{}, Error],
              {abort, #{}, Error}},
             {[?PUBLISH, 456, #{}, Topic],
-             {publish, #{}, Topic, 456} },
+             {publish, 456, #{}, Topic} },
             {[?PUBLISH, 456, #{}, Topic, Arg],
-             {publish, #{}, Topic, 456, Arg }},
+             {publish, 456, #{}, Topic, Arg }},
             {[?PUBLISH, 456, #{}, Topic, [], ArgKw ],
-             {publish, #{}, Topic, 456, ArgKw, [] } },
+             {publish, 456, #{}, Topic,  [], ArgKw } },
             {[?PUBLISHED, 123, 456],
              {published, 123, 456}},
             {[?SUBSCRIBE, 123, #{}, Topic],
@@ -41,7 +41,7 @@
             {[?CALL, 123, #{}, Procedure, Arg],
              {call, 123, #{}, Procedure, Arg}},
             {[?CALL, 123, #{}, Procedure, [], ArgKw],
-             {call, 123, #{}, Procedure, ArgKw, []}},
+             {call, 123, #{}, Procedure, [], ArgKw}},
             {[?CANCEL, 123, #{}],
              {cancel, 123, #{}} },
             {[?INTERRUPT, 123, #{}],
@@ -76,15 +76,15 @@
              {goodbye, #{}, Error }},
             %% ADVANCED MESSAGES
             {[?CHALLENGE, <<"sample method">>, #{}],
-             {challenge, #{}, <<"sample method">> }},
+             {challenge, <<"sample method">>, #{} }},
             {[?CHALLENGE, <<"wampcra">>, #{}],
-             {challenge, #{}, wampcra }},
+             {challenge, wampcra, #{} }},
             {[?AUTHENTICATE, <<"AFFE">>, #{}],
-             {authenticate, #{}, <<"AFFE">> }},
+             {authenticate, <<"AFFE">>, #{} }},
             {[?CANCEL, 123, #{}],
-             {cancel, #{}, 123 }},
+             {cancel, 123, #{} }},
             {[?INTERRUPT, 123, #{}],
-             {interrupt, #{}, 123 }}
+             {interrupt, 123, #{} }}
            ]).
 
 -define(TYPE_MAPPING, [
@@ -138,20 +138,19 @@ deserialize_hello_msgpack_test() ->
 
 roundtrip_text_test_() ->
     Json = roundtrip_test(json),
-    %% JsonBatched = roundtrip_test(json_batched),
-    %% MsgPack = roundtrip_test(msgpack),
-    %% Json ++ JsonBatched ++ MsgPack.
-    Json.
+    JsonBatched = roundtrip_test(json_batched),
+    MsgPack = roundtrip_test(msgpack),
+    Json ++ JsonBatched ++ MsgPack.
 
-%% roundtrip_binary_test_() ->
-%%     Json = roundtrip_test(raw_json),
-%%     MsgPack = roundtrip_test(raw_msgpack),
-%%     MsgPackBatched = roundtrip_test(msgpack_batched),
-%%     Json ++ MsgPack ++ MsgPackBatched.
+roundtrip_binary_test_() ->
+    Json = roundtrip_test(raw_json),
+    MsgPack = roundtrip_test(raw_msgpack),
+    MsgPackBatched = roundtrip_test(msgpack_batched),
+    Json ++ MsgPack ++ MsgPackBatched.
 
-%% roundtrip_erlbin_test_() ->
-%%     %% not part of the official spec
-%%     roundtrip_test(raw_erlbin).
+roundtrip_erlbin_test_() ->
+    %% not part of the official spec
+    roundtrip_test(raw_erlbin).
 
 roundtrip_test(Encoding) ->
     Roundrip = fun({_, Erl}, List) ->
