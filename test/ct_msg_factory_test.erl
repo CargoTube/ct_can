@@ -140,7 +140,7 @@ validate(Msg, Type) ->
 
 validate(Msg, Type, MustKeys) ->
     io:format("msg: ~p~n",[Msg]),
-    ?assertEqual(Type, get_type(Msg)),
+    ?assertEqual(Type, ct_msg:get_type(Msg)),
     ?assertEqual(true, ct_msg_validation:is_valid(Msg)),
     ContainsKey = fun(Key, Map) ->
                           io:format("  testing for key ~p~n",[Key]),
@@ -148,7 +148,3 @@ validate(Msg, Type, MustKeys) ->
                           Map
                   end,
     lists:foldl(ContainsKey, Msg, MustKeys).
-
-
-get_type(#{type := Type}) ->
-    Type.

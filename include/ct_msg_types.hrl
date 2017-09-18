@@ -8,159 +8,52 @@
                          register | registered | unregister |
                          unregistered | invocation | interrupt | yield.
 
--type ct_msg_hello() :: #{type => hello,
-                        realm => binary(),
-                        details => map()}.
--type ct_msg_challenge() :: #{type => challenge,
-                            auth_method => binary() | atom(),
-                            extra => map()}.
--type ct_msg_authenticate() :: #{type => authenticate,
-                               signature => binary(),
-                               extra => map()}.
--type ct_msg_welcome() :: #{type => welcome,
-                          session_id => pos_integer(),
-                          details => map()}.
--type ct_msg_abort() :: #{type => abort,
-                        reason => binary() | atom(),
-                        details => map()}.
--type ct_msg_goodbye() :: #{type => goodbye,
-                          reason => binary() | atom(),
-                          details => map()}.
--type ct_msg_error() :: #{type => error,
-                        request_type => ct_msg_type(),
-                        request_id => pos_integer(),
-                        details => map(),
-                        error => binary() | atom()} |
-                      #{type => error,
-                        request_type => ct_msg_type(),
-                        request_id => pos_integer(),
-                        details => map(),
-                        error => binary() | atom(),
-                        arguments => list()} |
-                      #{type => error,
-                        request_type => ct_msg_type(),
-                        request_id => pos_integer(),
-                        details => map(),
-                        error => binary() | atom(),
-                        arguments => list(),
-                        arugments_kw => map()}.
--type ct_msg_publish() :: #{type => publish,
-                          request_id => pos_integer(),
-                          options => map(),
-                          topic => binary()} |
-                        #{type => publish,
-                          request_id => pos_integer(),
-                          options => map(),
-                          topic => binary(),
-                          arguments => list()} |
-                        #{type => publish,
-                          request_id => pos_integer(),
-                          options => map(),
-                          topic => binary(),
-                          arguments => list(),
-                          arguments_kw => map()}.
--type ct_msg_published() :: #{type => published,
-                            request_id => pos_integer(),
-                            publication_id => pos_integer()}.
--type ct_msg_subscribe() :: #{type => subscribe,
-                            request_id => pos_integer(),
-                            options => map(),
-                            topic => binary()}.
--type ct_msg_subscribed() :: #{type => subscribed,
-                             request_id => pos_integer(),
-                             subscription_id => pos_integer()}.
--type ct_msg_unsubscribe() :: #{type => unsubscribe,
-                              request_id => pos_integer(),
-                              subscription_id => pos_integer()}.
--type ct_msg_unsubscribed() :: #{type => unsubscribed,
-                               request_id => pos_integer()}.
--type ct_msg_event() :: #{type => event,
-                        subscription_id => pos_integer(),
-                        publication_id => pos_integer(),
-                        details => map()} |
-                      #{type => event,
-                        subscription_id => pos_integer(),
-                        publication_id => pos_integer(),
-                        details => map(),
-                        arugments => list()} |
-                      #{type => event,
-                        subscription_id => pos_integer(),
-                        publication_id => pos_integer(),
-                        details => map(),
-                        arguments => list(),
-                        arguments_kw => map()}.
--type ct_msg_call() :: #{type => call,
-                       request_id => pos_integer(),
-                       procedure => binary(),
-                       options => map()} |
-                     #{type => call,
-                       request_id => pos_integer(),
-                       procedure => binary(),
-                       options => map(),
-                       arguments => list()} |
-                     #{type => call,
-                       request_id => pos_integer(),
-                       procedure => binary(),
-                       options => map(),
-                       arguments => list(),
-                       arguments_kw => map()}.
--type ct_msg_cancel() :: #{type => cancel,
-                         request_id => pos_integer(),
-                         options => map()}.
--type ct_msg_result() :: #{type => result,
-                         request_id => pos_integer(),
-                         details => map()} |
-                       #{type => result,
-                         request_id => pos_integer(),
-                         details => map(),
-                         arguments => list()} |
-                       #{type => result,
-                         request_id => pos_integer(),
-                         details => map(),
-                         arguments => list(),
-                         arguments_kw => map()}.
--type ct_msg_register() :: #{type => register,
-                           request_id => pos_integer(),
-                           options => map(),
-                           procedure => binary()}.
--type ct_msg_registered() :: #{type => registered,
-                             request_id => pos_integer(),
-                             registration_id => pos_integer()}.
--type ct_msg_unregister() :: #{type => unregister,
-                             request_id => pos_integer(),
-                             registration_id => pos_integer()}.
--type ct_msg_unregistered() :: #{type => unregistered,
-                               request_id => pos_integer()}.
--type ct_msg_invocation() :: #{type => invocation,
-                             request_id => pos_integer(),
-                             registration_id => pos_integer(),
-                             details => map()} |
-                           #{type => invocation,
-                             request_id => pos_integer(),
-                             registration_id => pos_integer(),
-                             details => map(),
-                             arguments => list()} |
-                           #{type => invocation,
-                             request_id => pos_integer(),
-                             registration_id => pos_integer(),
-                             details => map(),
-                             arguments => list(),
-                             arguments_kw => map()}.
--type ct_msg_interrupt() :: #{type => interrupt,
-                            request_id => pos_integer(),
-                            options => map()}.
--type ct_msg_yield() :: #{type => yield,
-                        request_id => pos_integer(),
-                        options => map()} |
-                      #{type => yield,
-                        request_id => pos_integer(),
-                        options => map(),
-                        arguments => list()} |
-                      #{type => yield,
-                        request_id => pos_integer(),
-                        options => map(),
-                        arguments => list(),
-                        arguments_kw => map()}.
+-type ct_msg_hello() :: {hello, binary(), map()}.
+-type ct_msg_challenge() :: {challenge, binary() | atom(),map()}.
+-type ct_msg_authenticate() :: {authenticate, binary(), map()}.
+-type ct_msg_welcome() :: {welcome, pos_integer(), map()}.
+-type ct_msg_abort() :: {abort, binary() | atom(), map()}.
+-type ct_msg_goodbye() :: {goodbye, binary() | atom(), map()}.
+-type ct_msg_error() :: {error, ct_msg_type(), pos_integer(), map(),
+                          binary() | atom()} |
+                      {error, ct_msg_type(), pos_integer(), map(),
+                        binary() | atom(), list()} |
+                      {error, ct_msg_type(), pos_integer(), map(),
+                        binary() | atom(), list(), map()} .
+-type ct_msg_publish() :: {publish, pos_integer(), map(), binary()} |
+                          {publish, pos_integer(), map(), binary(), list()} |
+                          {publish, pos_integer(), map(), binary(), list(),
+                           map()}.
+-type ct_msg_published() :: {published, pos_integer(), pos_integer()}.
+-type ct_msg_subscribe() :: {subscribe, pos_integer(), map(), binary()}.
+-type ct_msg_subscribed() :: {subscribed, pos_integer(), pos_integer()}.
+-type ct_msg_unsubscribe() :: {unsubscribe, pos_integer(), pos_integer()}.
+-type ct_msg_unsubscribed() :: {unsubscribed, pos_integer()}.
+-type ct_msg_event() :: {event, pos_integer(), pos_integer(), map()} |
+                        {event, pos_integer(), pos_integer(), map(), list()} |
+                        {event, pos_integer(), pos_integer(), map(), list(),
+                         map()}.
+-type ct_msg_call() :: {call, pos_integer(), binary(), map()} |
+                       {call, pos_integer(), binary(), map(), list()} |
+                       {call, pos_integer(), binary(), map(), list(), map()}.
+-type ct_msg_cancel() :: {cancel, pos_integer(), map()}.
+-type ct_msg_result() :: {result, pos_integer(), map()} |
+                         {result, pos_integer(), map(), list()} |
+                         {result, pos_integer(), map(), list(), map()}.
+-type ct_msg_register() :: {register, pos_integer(), map(), binary()}.
+-type ct_msg_registered() :: {registered, pos_integer(), pos_integer()}.
+-type ct_msg_unregister() :: {unregister, pos_integer(), pos_integer()}.
+-type ct_msg_unregistered() :: {unregistered, pos_integer()}.
+-type ct_msg_invocation() :: {invocation, pos_integer(), pos_integer(), map()} |
+                             {invocation, pos_integer(), pos_integer(), map(),
+                              list()} |
+                             {invocation, pos_integer(), pos_integer(), map(),
+                              list(), map()}.
+-type ct_msg_interrupt() :: {interrupt, pos_integer(), map()}.
+-type ct_msg_yield() :: {yield, pos_integer(), map()} |
+                        {yield, pos_integer(), map(), list()} |
+                        {yield, pos_integer(), map(), list(), map()} .
+
 
 -type ct_msg() :: ct_msg_hello() |
                     ct_msg_challenge() |

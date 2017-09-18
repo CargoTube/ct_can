@@ -7,6 +7,8 @@
 -include("ct_msg_mapping.hrl").
 
 -export([
+         get_type/1,
+
          parse/2,
          serialize/2,
          ping/1,
@@ -14,6 +16,10 @@
         ]).
 
 -define(JSONB_SEPARATOR, <<24>>).
+
+
+get_type(Msg) ->
+    erlang:element(1, Msg).
 
 
 parse(Buffer, Encoding) ->
@@ -100,10 +106,10 @@ decode_binary_msg(0, Enc, Payload, Messages, Buffer) ->
     {ok, Msg} = binary_to_msg(Enc, Payload),
     parse_binary(Buffer, [Msg | Messages], Enc);
 decode_binary_msg(1, Enc, Payload, Messages, Buffer) ->
-    parse_binary(Buffer, [#{type => ping, payload => Payload}
+    parse_binary(Buffer, [{ping, Payload}
                             | Messages], Enc);
 decode_binary_msg(2, Enc, Payload, Messages, Buffer) ->
-    parse_binary(Buffer, [#{type => pong, payload => Payload}
+    parse_binary(Buffer, [{pong, Payload}
                             | Messages], Enc).
 
 binary_to_msg(raw_erlbin, Payload) ->
