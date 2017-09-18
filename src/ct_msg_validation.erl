@@ -6,9 +6,8 @@
 
 %% API
 -export([is_valid/1]).
--export([enforce_valid/1]).
 -export([get_bad_fields/1]).
-
+-include("ct_msg_types.hrl").
 
 -export([
          is_valid_type/1,
@@ -20,57 +19,71 @@
          is_valid_argumentskw/1
         ]).
 
--spec is_valid(map()) -> true | false.
+-spec is_valid(ct_msg()) -> true | false.
 is_valid(Msg) ->
     ValidFields = contains_valid_fields(Msg),
-    EntryList = update_uri_field(ValidFields, Msg),
-    Validate = fun(_, false) ->
-                       false;
-                  (Entry, true) ->
-                       is_valid_entry(Entry)
-               end,
-    lists:foldl(Validate, ValidFields, EntryList).
+    ValidType = is_valid_type(element(1, Msg)),
+    maybe_check_fields(ValidType and ValidFields, Msg).
 
--spec enforce_valid(map()) ->  { true | false, map()}.
-enforce_valid(Msg) ->
-    NewMsg = enforce_valid_fields(Msg),
-    {is_valid(NewMsg), NewMsg}.
+maybe_check_fields(true, Msg) ->
+    are_fields_valid(Msg);
+maybe_check_fields(_, _) ->
+    false.
 
 
-get_bad_fields(Msg) ->
-    ValidFields = contains_valid_fields(Msg),
-    EntryList = update_uri_field(ValidFields, Msg),
-    GetBadFields = fun(Entry, BadEntries) ->
-                        case is_valid_entry(Entry) of
-                            false ->
-                                [ Entry | BadEntries ];
-                            true ->
-                                BadEntries
-                        end
-                end,
-    BadEntry = case ValidFields of
-                   true -> [];
-                   false -> [fields]
-               end,
-    lists:foldl(GetBadFields, BadEntry, EntryList).
+get_bad_fields(Msg) when is_tuple(Msg) ->
+    [Type | KeyFields] = erlang:tuple_to_list(Msg),
+    Found = get_field_types(Type),
+    get_bad_fields(KeyFields, [], Found).
+
+get_bad_fields([], BadFields, _) ->
+    BadFields;
+get_bad_fields([Field | Fields], BadFields, {_, [], [Type | MayKeys]}) ->
+    maybe_add_and_next_field({is_valid_entry({Type, Field}), Type},
+                             Fields, BadFields, [], MayKeys);
+get_bad_fields([Field | Fields], BadFields, {_, [Type | MustKeys], MayKeys}) ->
+    maybe_add_and_next_field({is_valid_entry({Type, Field}), Type},
+                             Fields, BadFields, MustKeys, MayKeys);
+get_bad_fields(Fields, [], _) ->
+    Fields.
+
+maybe_add_and_next_field({false, Type}, Fields, BadFields, MustKeys, MayKeys) ->
+    get_bad_fields(Fields, [Type | BadFields], {unused, MustKeys, MayKeys});
+maybe_add_and_next_field(_, Fields, BadFields, MustKeys, MayKeys) ->
+    get_bad_fields(Fields, BadFields, {unused, MustKeys, MayKeys}).
+
+
+are_fields_valid(Msg) ->
+    [Type | KeyFields] = erlang:tuple_to_list(Msg),
+    Found = get_field_types(Type),
+    check_fields(KeyFields,  Found).
+
+
+check_fields([], {_, [], _}) ->
+    true;
+check_fields([Field | Fields], {_, [], [Type | MayKeys]}) ->
+   maybe_next_field(is_valid_entry({Type, Field}), Fields, [], MayKeys);
+check_fields([Field | Fields], {_, [Type | MustKeys ], MayKeys}) ->
+   maybe_next_field(is_valid_entry({Type, Field}), Fields, MustKeys, MayKeys);
+check_fields(_, _) ->
+    false.
+
+maybe_next_field(true, Fields, MustKeys, MayKeys) ->
+    check_fields(Fields, {unused, MustKeys, MayKeys});
+maybe_next_field(false, _, _, _) ->
+    false.
+
+%% update_uri_field(false, _) ->
+%%     [];
+%% update_uri_field(true, #{type := register} = Msg) ->
+%%     Procedure = maps:get(procedure, Msg),
+%%     [ {reg_procedure, Procedure } |
+%%       maps:to_list(maps:without([procedure], Msg)) ];
+%% update_uri_field(true, Msg) ->
+%%       maps:to_list(Msg).
 
 
 
-update_uri_field(false, _) ->
-    [];
-update_uri_field(true, #{type := register} = Msg) ->
-    Procedure = maps:get(procedure, Msg),
-    [ {reg_procedure, Procedure } |
-      maps:to_list(maps:without([procedure], Msg)) ];
-update_uri_field(true, Msg) ->
-      maps:to_list(Msg).
-
-
-
-
-
-is_valid_entry({type, Type}) ->
-    is_valid_type(Type);
 is_valid_entry({realm, Realm}) ->
     is_valid_uri(Realm);
 is_valid_entry({topic, Topic}) ->
@@ -153,8 +166,6 @@ is_valid_uri(Uri, Type) when is_binary(Uri) ->
 is_valid_uri(_Uri, _Type) ->
     false.
 
-is_valid_uri_beginning([<<"tube">>, <<"cargo">>|_], _) ->
-    false;
 is_valid_uri_beginning([<<"cargo">>|_], _) ->
     false;
 is_valid_uri_beginning([<<"cargotube">>| _], _) ->
@@ -283,7 +294,7 @@ is_valid_argumentskw(_) -> false.
                         [arguments, arguments_kw]},
                        {result, [request_id, details],
                         [arguments, arguments_kw]},
-                       {register, [request_id, options, procedure], []},
+                       {register, [request_id, options, reg_procedure], []},
                        {registered, [request_id, registration_id], []},
                        {unregister, [request_id, registration_id], []},
                        {unregistered, [request_id], []},
@@ -302,35 +313,18 @@ is_valid_argumentskw(_) -> false.
                       ]).
 
 
-enforce_valid_fields(#{type := Type} = Map) ->
+get_field_types(Type) ->
+    lists:keyfind(Type, 1, ?FIELD_MAPPING).
+
+
+contains_valid_fields(Msg) ->
+    Type = ct_msg:get_type(Msg),
     Found = lists:keyfind(Type, 1, ?FIELD_MAPPING),
-    enforce_found_valid_fields(Found, Map).
+    validate_found_keys(Found, Msg).
 
-enforce_found_valid_fields({_, MustKeys, MayKeys}, Map) ->
-    Keys = [ type | MustKeys ] ++ MayKeys,
-    maps:with(Keys, Map);
-enforce_found_valid_fields(false, Map) ->
-    Map.
-
-contains_valid_fields(#{type := Type} = Map) ->
-    Found = lists:keyfind(Type, 1, ?FIELD_MAPPING),
-    validate_found_keys(Found, Map).
-
-validate_found_keys({_, MustKeys, MayKeys}, Map) ->
-    validate_keys(Map, MustKeys, MayKeys);
+validate_found_keys({_, MustKeys, MayKeys}, Msg) ->
+    [_Type | KeyList] = erlang:tuple_to_list(Msg),
+    ( length(KeyList) >= length(MustKeys) ) and
+        ( length(KeyList) =< (length(MustKeys) + length(MayKeys)) );
 validate_found_keys(false, _) ->
     false.
-
-
-
-validate_keys(Map, MustKeys, MayKeys) ->
-    KeyList = lists:subtract(maps:keys(Map), [type | MustKeys]),
-    HasKeys = fun(Key, ValidSoFar) ->
-                      maps:is_key(Key, Map) and ValidSoFar
-              end,
-    MustResult = lists:foldl(HasKeys, true, MustKeys),
-    DropKey = fun(Key, List) ->
-                    lists:delete(Key, List)
-              end,
-    KeysLeft = lists:foldl(DropKey, KeyList, MayKeys),
-    MustResult and (KeysLeft == []).

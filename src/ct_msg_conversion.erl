@@ -18,8 +18,8 @@
 
 -spec to_wamp(ErlWamp) -> list() when
       ErlWamp :: ct_msg().
-to_wamp(Msg0) ->
-    {true, Msg} = ct_msg_validation:enforce_valid(Msg0),
+to_wamp(Msg) ->
+    true = ct_msg_validation:is_valid(Msg),
     msg_to_wamp(Msg).
 
 -spec to_internal(WampMsg) -> ct_msg() when
@@ -28,149 +28,109 @@ to_internal(WampMsg) ->
     ErlMsg = msg_to_internal(WampMsg),
     case ct_msg_validation:get_bad_fields(ErlMsg) of
         [] -> ErlMsg;
-        BadCargoList -> {bad_cargo, BadCargoList}
+        BadFields -> {bad_fields, BadFields}
     end.
 
 
 -spec msg_to_wamp(Msg) -> list() when
       Msg :: ct_msg().
-msg_to_wamp(#{type := hello, realm := Realm, details := Details}) ->
+msg_to_wamp({hello, Realm, Details}) ->
     [?HELLO, Realm, Details];
-msg_to_wamp(#{type := welcome, session_id := SessionId, details := Details}) ->
+msg_to_wamp({welcome, SessionId, Details}) ->
     [?WELCOME, SessionId, Details];
-msg_to_wamp(#{type := abort, details := Details, reason := Reason}) ->
-    [?ABORT, Details, error_unload(Reason)];
-msg_to_wamp(#{type := goodbye, details := Details, reason := Reason}) ->
-    [?GOODBYE, Details, error_unload(Reason)];
-msg_to_wamp(#{type := error, request_type := AtomType, request_id := RequestId,
-          details := Details, error := Error,
-          arguments_kw := ArgumentsKw} = Msg)
+msg_to_wamp({abort, Details, Reason}) ->
+    [?ABORT, Details, error_serialize(Reason)];
+msg_to_wamp({goodbye, Details, Reason}) ->
+    [?GOODBYE, Details, error_serialize(Reason)];
+msg_to_wamp({error, AtomType, RequestId, Details, Error, Arguments,
+             ArgumentsKw})
   when is_map(ArgumentsKw), map_size(ArgumentsKw) > 0 ->
     WampType = atom_to_request_type(AtomType),
-    Arguments = maps:get(arguments, Msg, []),
-    [?ERROR, WampType, RequestId, Details, error_unload(Error), Arguments,
+    [?ERROR, WampType, RequestId, Details, error_serialize(Error), Arguments,
      ArgumentsKw];
-msg_to_wamp(#{type := error, request_type := AtomType, request_id := RequestId,
-          details := Details, error := Error, arguments := Arguments})
+msg_to_wamp({error, AtomType, RequestId, Details, Error, Arguments})
   when is_list(Arguments), length(Arguments) > 0 ->
     WampType = atom_to_request_type(AtomType),
-    [?ERROR, WampType, RequestId, Details, error_unload(Error), Arguments];
-msg_to_wamp(#{type := error, request_type := AtomType, request_id := RequestId,
-          details := Details, error := Error}) ->
+    [?ERROR, WampType, RequestId, Details, error_serialize(Error), Arguments];
+msg_to_wamp({error, AtomType, RequestId, Details, Error}) ->
     WampType = atom_to_request_type(AtomType),
-    [?ERROR, WampType, RequestId, Details, error_unload(Error)];
-msg_to_wamp(#{type := publish, request_id := RequestId, options := Options,
-              topic := Topic, arguments_kw := ArgumentsKw} = Msg)
+    [?ERROR, WampType, RequestId, Details, error_serialize(Error)];
+msg_to_wamp({publish, RequestId, Options, Topic, Arguments, ArgumentsKw})
   when is_map(ArgumentsKw), map_size(ArgumentsKw) > 0 ->
-    Arguments = maps:get(arguments, Msg, []),
-    [?PUBLISH, RequestId, Options, Topic, Arguments,
-     ArgumentsKw];
-msg_to_wamp(#{type := publish, request_id := RequestId, options := Options,
-              topic := Topic, arguments := Arguments})
+    [?PUBLISH, RequestId, Options, Topic, Arguments, ArgumentsKw];
+msg_to_wamp({publish, RequestId, Options, Topic, Arguments})
   when is_list(Arguments), length(Arguments) > 0 ->
     [?PUBLISH, RequestId, Options, Topic, Arguments];
-msg_to_wamp(#{type := publish, request_id := RequestId, options := Options,
-              topic := Topic}) ->
+msg_to_wamp({publish, RequestId, Options, Topic}) ->
     [?PUBLISH, RequestId, Options, Topic];
-msg_to_wamp(#{type := published, request_id := RequestId,
-              publication_id := PublicationId}) ->
+msg_to_wamp({published, RequestId, PublicationId}) ->
     [?PUBLISHED, RequestId, PublicationId];
-msg_to_wamp(#{type := subscribe, request_id := RequestId, options := Options,
-          topic := Topic}) ->
+msg_to_wamp({subscribe, RequestId, Options, Topic}) ->
     [?SUBSCRIBE, RequestId, Options, Topic];
-msg_to_wamp(#{type := subscribed, request_id := RequestId,
-          subscription_id := SubscriptionId}) ->
+msg_to_wamp({subscribed, RequestId, SubscriptionId}) ->
     [?SUBSCRIBED, RequestId, SubscriptionId];
-msg_to_wamp(#{type := unsubscribe, request_id := RequestId,
-          subscription_id := SubscriptionId}) ->
+msg_to_wamp({unsubscribe, RequestId, SubscriptionId}) ->
     [?UNSUBSCRIBE, RequestId, SubscriptionId];
-msg_to_wamp(#{type := unsubscribed, request_id := RequestId}) ->
+msg_to_wamp({unsubscribed, RequestId}) ->
     [?UNSUBSCRIBED, RequestId];
-msg_to_wamp(#{type := event, subscription_id := SubscriptionId,
-          publication_id := PublicationId, details := Details,
-          arguments_kw := ArgumentsKw} = Msg)
+msg_to_wamp({event, SubscriptionId, PublicationId, Details, Arguments,
+             ArgumentsKw})
   when is_map(ArgumentsKw), map_size(ArgumentsKw) > 0 ->
-    Arguments = maps:get(arguments, Msg, []),
-    [?EVENT, SubscriptionId, PublicationId, Details, Arguments,
-     ArgumentsKw];
-msg_to_wamp(#{type := event, subscription_id := SubscriptionId,
-          publication_id := PublicationId, details := Details,
-          arguments := Arguments})
+    [?EVENT, SubscriptionId, PublicationId, Details, Arguments, ArgumentsKw];
+msg_to_wamp({event, SubscriptionId, PublicationId, Details, Arguments})
   when is_list(Arguments), length(Arguments) > 0 ->
     [?EVENT, SubscriptionId, PublicationId, Details, Arguments];
-msg_to_wamp(#{type := event, subscription_id := SubscriptionId,
-          publication_id := PublicationId, details := Details}) ->
+msg_to_wamp({event, SubscriptionId, PublicationId, Details}) ->
     [?EVENT, SubscriptionId, PublicationId, Details];
-msg_to_wamp(#{type := call, request_id := RequestId, options := Options,
-          procedure := Procedure, arguments_kw := ArgumentsKw} = Msg)
+msg_to_wamp({call, RequestId, Options, Procedure, Arguments, ArgumentsKw} )
   when is_map(ArgumentsKw), map_size(ArgumentsKw) > 0 ->
-    Arguments = maps:get(arguments, Msg, []),
-    [?CALL, RequestId, Options, Procedure, Arguments,
-     ArgumentsKw];
-msg_to_wamp(#{type := call, request_id := RequestId, options := Options,
-          procedure := Procedure, arguments := Arguments})
+    [?CALL, RequestId, Options, Procedure, Arguments, ArgumentsKw];
+msg_to_wamp({call, RequestId, Options, Procedure, Arguments})
   when is_list(Arguments), length(Arguments) > 0 ->
     [?CALL, RequestId, Options, Procedure, Arguments];
-msg_to_wamp(#{type := call, request_id := RequestId, options := Options,
-          procedure := Procedure}) ->
+msg_to_wamp({call, RequestId, Options, Procedure}) ->
     [?CALL, RequestId, Options, Procedure];
-msg_to_wamp(#{type := result, request_id := RequestId, details := Details,
-         arguments_kw := ArgumentsKw} = Msg)
+msg_to_wamp({result, RequestId, Details, Arguments, ArgumentsKw})
   when is_map(ArgumentsKw), map_size(ArgumentsKw) > 0 ->
-    Arguments = maps:get(arguments, Msg, []),
     [?RESULT, RequestId, Details, Arguments, ArgumentsKw];
-msg_to_wamp(#{type := result, request_id := RequestId, details := Details,
-         arguments := Arguments})
+msg_to_wamp({result, RequestId, Details, Arguments})
   when is_list(Arguments), length(Arguments) > 0 ->
     [?RESULT, RequestId, Details, Arguments];
-msg_to_wamp(#{type := result, request_id := RequestId, details := Details}) ->
+msg_to_wamp({result, RequestId, Details}) ->
     [?RESULT, RequestId, Details];
-msg_to_wamp(#{type := register, request_id := RequestId, options := Options,
-          procedure := Procedure}) ->
+msg_to_wamp({register, RequestId, Options, Procedure}) ->
     [?REGISTER, RequestId, Options, Procedure];
-msg_to_wamp(#{type := registered, request_id := RequestId,
-          registration_id := RegistrationId}) ->
+msg_to_wamp({registered, RequestId, RegistrationId}) ->
     [?REGISTERED, RequestId, RegistrationId];
-msg_to_wamp(#{type := unregister, request_id := RequestId,
-          registration_id := RegistrationId}) ->
+msg_to_wamp({unregister, RequestId, RegistrationId}) ->
     [?UNREGISTER, RequestId, RegistrationId];
-msg_to_wamp(#{type := unregistered, request_id := RequestId}) ->
+msg_to_wamp({unregistered, RequestId}) ->
     [?UNREGISTERED, RequestId];
-msg_to_wamp(#{type := invocation, request_id := RequestId,
-         registration_id := RegistrationId, details := Details,
-         arguments_kw := ArgumentsKw} = Msg)
+msg_to_wamp({invocation, RequestId, RegistrationId, Details, Arguments,
+             ArgumentsKw})
   when is_map(ArgumentsKw), map_size(ArgumentsKw) > 0 ->
-    Arguments = maps:get(arguments, Msg, []),
-    [?INVOCATION, RequestId, RegistrationId, Details, Arguments,
-    ArgumentsKw];
-msg_to_wamp(#{type := invocation, request_id := RequestId,
-         registration_id := RegistrationId, details := Details,
-         arguments := Arguments})
+    [?INVOCATION, RequestId, RegistrationId, Details, Arguments, ArgumentsKw];
+msg_to_wamp({invocation, RequestId, RegistrationId, Details, Arguments})
   when is_list(Arguments), length(Arguments) > 0 ->
     [?INVOCATION, RequestId, RegistrationId, Details, Arguments];
-msg_to_wamp(#{type := invocation, request_id := RequestId,
-         registration_id := RegistrationId, details := Details}) ->
+msg_to_wamp({invocation, RequestId, RegistrationId, Details}) ->
     [?INVOCATION, RequestId, RegistrationId, Details];
-msg_to_wamp(#{type := yield, request_id := RequestId, options := Options,
-         arguments_kw := ArgumentsKw} = Msg)
+msg_to_wamp({yield, RequestId, Options, Arguments, ArgumentsKw})
   when is_map(ArgumentsKw), map_size(ArgumentsKw) > 0 ->
-    Arguments = maps:get(arguments, Msg, []),
     [?YIELD, RequestId, Options, Arguments, ArgumentsKw];
-msg_to_wamp(#{type := yield, request_id := RequestId, options := Options,
-         arguments := Arguments})
+msg_to_wamp({yield, RequestId, Options, Arguments})
   when is_list(Arguments), length(Arguments) > 0 ->
     [?YIELD, RequestId, Options, Arguments];
-msg_to_wamp(#{type := yield, request_id := RequestId, options := Options}) ->
+msg_to_wamp({yield, RequestId, Options}) ->
     [?YIELD, RequestId, Options];
 %% ADVANCED MESSAGES
-msg_to_wamp(#{type := challenge, auth_method := AuthMethod, extra := Extra}) ->
-    [?CHALLENGE, authmethod_unload(AuthMethod), Extra];
-msg_to_wamp(#{type := authenticate, signature := Signature, extra := Extra}) ->
+msg_to_wamp({challenge, AuthMethod, Extra}) ->
+    [?CHALLENGE, authmethod_serialize(AuthMethod), Extra];
+msg_to_wamp({authenticate, Signature, Extra}) ->
     [?AUTHENTICATE, Signature, Extra];
-msg_to_wamp(#{type := cancel, request_id := RequestId, options := Options}) ->
+msg_to_wamp({cancel, RequestId, Options}) ->
     [?CANCEL, RequestId, Options];
-msg_to_wamp(#{type := interrupt, request_id := RequestId,
-              options := Options}) ->
+msg_to_wamp({interrupt, RequestId, Options}) ->
     [?INTERRUPT, RequestId, Options].
 %% msg_to_wamp({type := heartbeat, IncomingSeq, OutgoingSeq}) ->
 %%     [?HEARTBEAT, IncomingSeq, OutgoingSeq];
@@ -180,179 +140,147 @@ msg_to_wamp(#{type := interrupt, request_id := RequestId,
 -spec msg_to_internal(Msg) -> ct_msg() when
       Msg :: list().
 msg_to_internal([?HELLO, Realm, Details]) ->
-    #{type => hello, realm => Realm, details => dict_load(Details)};
+    {hello, Realm, dict_deserialize(Details)};
 msg_to_internal([?WELCOME, SessionId, Details]) ->
-    #{type => welcome, session_id => SessionId,
-      details => dict_load(Details)};
+    {welcome, SessionId, dict_deserialize(Details)};
 msg_to_internal([?ABORT, Details, Reason]) ->
-    #{type => abort, details => dict_load(Details),
-      reason => try_error_load(Reason)};
+    {abort, dict_deserialize(Details), try_error_deserialize(Reason)};
 msg_to_internal([?GOODBYE, Details, Reason]) ->
-    #{type => goodbye, details => dict_load(Details),
-      reason => try_error_load(Reason)};
+    {goodbye, dict_deserialize(Details), try_error_deserialize(Reason)};
 msg_to_internal([?ERROR, RequestType, RequestId, Details, Error, Arguments,
             ArgumentsKw]) ->
     ErlType = request_type_to_atom(RequestType),
-    #{type => error, request_type => ErlType, request_id => RequestId,
-      details => Details, error => try_error_load(Error),
-     arguments => Arguments, arguments_kw => ArgumentsKw};
+    {error, ErlType, RequestId, Details, try_error_deserialize(Error),
+     Arguments, ArgumentsKw};
 msg_to_internal([?ERROR, RequestType, RequestId, Details, Error, Arguments]) ->
     ErlType = request_type_to_atom(RequestType),
-    #{type => error, request_type => ErlType, request_id => RequestId,
-      details => Details, error => try_error_load(Error),
-     arguments => Arguments};
+    {error, ErlType, RequestId, Details, try_error_deserialize(Error),
+     Arguments};
 msg_to_internal([?ERROR, RequestType, RequestId, Details, Error]) ->
     ErlType = request_type_to_atom(RequestType),
-    #{type => error, request_type => ErlType, request_id => RequestId,
-      details => Details, error => try_error_load(Error)};
+    {error, ErlType, RequestId, Details, try_error_deserialize(Error)};
 msg_to_internal([?PUBLISH, RequestId, Options, Topic]) ->
-    #{type => publish,  request_id => RequestId,
-      options => dict_load(Options), topic => Topic};
+    {publish,  RequestId, dict_deserialize(Options), Topic};
 msg_to_internal([?PUBLISH, RequestId, Options, Topic, Arguments]) ->
-    #{type => publish,  request_id => RequestId,
-      options => dict_load(Options), topic => Topic, arguments => Arguments};
+    {publish,  RequestId, dict_deserialize(Options), Topic, Arguments};
 msg_to_internal([?PUBLISH, RequestId, Options, Topic, Arguments, ArgumentsKw])->
-    #{type => publish,  request_id => RequestId,
-      options => dict_load(Options), topic => Topic, arguments => Arguments,
-      arguments_kw => ArgumentsKw};
+    {publish,  RequestId, dict_deserialize(Options), Topic, Arguments,
+     ArgumentsKw};
 msg_to_internal([?PUBLISHED, RequestId, PublicationId]) ->
-    #{type => published, request_id => RequestId,
-      publication_id => PublicationId};
+    {published, RequestId, PublicationId};
 msg_to_internal([?SUBSCRIBE, RequestId, Options, Topic]) ->
-    #{type => subscribe, request_id => RequestId,
-      options => dict_load(Options), topic => Topic};
+    {subscribe, RequestId, dict_deserialize(Options), Topic};
 msg_to_internal([?SUBSCRIBED, RequestId, SubscriptionId]) ->
-    #{type => subscribed, request_id => RequestId,
-      subscription_id => SubscriptionId};
+    {subscribed, RequestId, SubscriptionId};
 msg_to_internal([?UNSUBSCRIBE, RequestId, SubscriptionId]) ->
-    #{type => unsubscribe, request_id => RequestId,
-      subscription_id => SubscriptionId};
+    {unsubscribe, RequestId, SubscriptionId};
 msg_to_internal([?UNSUBSCRIBED, RequestId]) ->
-    #{type => unsubscribed, request_id => RequestId};
+    {unsubscribed, RequestId};
 msg_to_internal([?EVENT, SubscriptionId, PublicationId, Details]) ->
-    #{type => event, subscription_id => SubscriptionId,
-      publication_id => PublicationId, details => dict_load(Details)};
+    {event, SubscriptionId, PublicationId, dict_deserialize(Details)};
 msg_to_internal([?EVENT, SubscriptionId, PublicationId, Details, Arguments]) ->
-    #{type => event, subscription_id => SubscriptionId,
-      publication_id => PublicationId, details => dict_load(Details),
-      arguments => Arguments};
+    {event, SubscriptionId, PublicationId, dict_deserialize(Details),
+     Arguments};
 msg_to_internal([?EVENT, SubscriptionId, PublicationId, Details, Arguments,
         ArgumentsKw]) ->
-    #{type => event, subscription_id => SubscriptionId,
-      publication_id => PublicationId, details => dict_load(Details),
-      arguments => Arguments, arguments_kw => ArgumentsKw};
+    {event, SubscriptionId, PublicationId, dict_deserialize(Details), Arguments,
+     ArgumentsKw};
 msg_to_internal([?CALL, RequestId, Options, Procedure]) ->
-    #{type => call, request_id => RequestId, options => dict_load(Options),
-      procedure => Procedure};
+    {call, RequestId, dict_deserialize(Options), Procedure};
 msg_to_internal([?CALL, RequestId, Options, Procedure, Arguments]) ->
-    #{type => call, request_id => RequestId, options => dict_load(Options),
-      procedure => Procedure, arguments => Arguments};
+    {call, RequestId, dict_deserialize(Options), Procedure, Arguments};
 msg_to_internal([?CALL, RequestId, Options, Procedure, Arguments,
                  ArgumentsKw]) ->
-    #{type => call, request_id => RequestId, options => dict_load(Options),
-      procedure => Procedure, arguments => Arguments,
-      arguments_kw => ArgumentsKw};
+    {call, RequestId, dict_deserialize(Options), Procedure, Arguments,
+     ArgumentsKw};
 msg_to_internal([?RESULT, RequestId, Details]) ->
-    #{type => result, request_id => RequestId, details => dict_load(Details)};
+    {result, RequestId, dict_deserialize(Details)};
 msg_to_internal([?RESULT, RequestId, Details, Arguments]) ->
-    #{type => result, request_id => RequestId, details => dict_load(Details),
-      arguments => Arguments};
+    {result, RequestId, dict_deserialize(Details), Arguments};
 msg_to_internal([?RESULT, RequestId, Details, Arguments, ArgumentsKw]) ->
-    #{type => result, request_id => RequestId, details => dict_load(Details),
-      arguments => Arguments, arguments_kw => ArgumentsKw};
+    {result, RequestId, dict_deserialize(Details), Arguments, ArgumentsKw};
 msg_to_internal([?REGISTER, RequestId, Options, Procedure]) ->
-    #{type => register, request_id => RequestId,
-      options => dict_load(Options), procedure => Procedure};
+    {register, RequestId, dict_deserialize(Options), Procedure};
 msg_to_internal([?REGISTERED, RequestId, RegistrationId]) ->
-    #{type => registered, request_id => RequestId,
-      registration_id => RegistrationId};
+    {registered, RequestId, RegistrationId};
 msg_to_internal([?UNREGISTER, RequestId, RegistrationId]) ->
-    #{type => unregister, request_id => RequestId,
-      registration_id => RegistrationId};
+    {unregister, RequestId, RegistrationId};
 msg_to_internal([?UNREGISTERED, RequestId]) ->
-    #{type => unregistered, request_id => RequestId};
+    {unregistered, RequestId};
 msg_to_internal([?INVOCATION, RequestId, RegistrationId, Details]) ->
-    #{type => invocation, request_id => RequestId,
-      registration_id => RegistrationId, details => dict_load(Details)};
+    {invocation, RequestId, RegistrationId, dict_deserialize(Details)};
 msg_to_internal([?INVOCATION, RequestId, RegistrationId, Details, Arguments]) ->
-    #{type => invocation, request_id => RequestId,
-      registration_id => RegistrationId, details => dict_load(Details),
-      arguments => Arguments};
+    {invocation, RequestId, RegistrationId, dict_deserialize(Details),
+      Arguments};
 msg_to_internal([?INVOCATION, RequestId, RegistrationId, Details, Arguments,
             ArgumentsKw]) ->
-    #{type => invocation, request_id => RequestId,
-      registration_id => RegistrationId, details => dict_load(Details),
-      arguments => Arguments, arguments_kw => ArgumentsKw};
+    {invocation, RequestId, RegistrationId, dict_deserialize(Details),
+     Arguments, ArgumentsKw};
 msg_to_internal([?YIELD, RequestId, Options]) ->
-    #{type => yield, request_id => RequestId, options => dict_load(Options)};
+    {yield, RequestId, dict_deserialize(Options)};
 msg_to_internal([?YIELD, RequestId, Options, Arguments]) ->
-    #{type => yield, request_id => RequestId, options => dict_load(Options),
-      arguments => Arguments};
+    {yield, RequestId, dict_deserialize(Options), Arguments};
 msg_to_internal([?YIELD, RequestId, Options, Arguments, ArgumentsKw]) ->
-    #{type => yield, request_id => RequestId, options => dict_load(Options),
-      arguments => Arguments, arguments_kw => ArgumentsKw};
+    {yield, RequestId, dict_deserialize(Options), Arguments, ArgumentsKw};
 %% ADVANCED MESSAGES
 msg_to_internal([?CHALLENGE, AuthMethod, Extra]) ->
-    #{type => challenge, auth_method => authmethod_load(AuthMethod),
-      extra => dict_load(Extra)};
+    {challenge, authmethod_deserialize(AuthMethod), dict_deserialize(Extra)};
 msg_to_internal([?AUTHENTICATE, Signature, Extra]) ->
-    #{type => authenticate, signature => Signature,
-      extra => dict_load(Extra)};
+    {authenticate, Signature, dict_deserialize(Extra)};
 msg_to_internal([?CANCEL, RequestId, Options]) ->
-    #{type => cancel, request_id => RequestId, options => dict_load(Options)};
+    {cancel, RequestId, dict_deserialize(Options)};
 msg_to_internal([?INTERRUPT, RequestId, Options]) ->
-    #{type => interrupt, request_id => RequestId,
-      options => dict_load(Options)};
-msg_to_internal(#{type := ping} = Ping) ->
+    {interrupt, RequestId, dict_deserialize(Options)};
+msg_to_internal({ping, _} = Ping) ->
     Ping;
-msg_to_internal(#{type := pong} = Pong) ->
+msg_to_internal({pong, _} = Pong) ->
     Pong.
 %% msg_to_internal([?HEARTBEAT, IncomingSeq, OutgoingSeq, _Discard]) ->
 %%     msg_to_internal([?HEARTBEAT, IncomingSeq, OutgoingSeq]);
 %% msg_to_internal([?HEARTBEAT, IncomingSeq, OutgoingSeq]) ->
-%%     #{type => heartbeat, sequence_in => IncomingSeq,
+%%     {heartbeat, sequence_in => IncomingSeq,
 %%       sequence_out => OutgoingSeq};
 
 
--spec try_error_load(Error) -> binary() | atom() when
+-spec try_error_deserialize(Error) -> binary() | atom() when
       Error :: binary().
-try_error_load(Error) ->
-    convert_value(load, Error, ?ERROR_MAPPING).
+try_error_deserialize(Error) ->
+    convert_value(deserialize, Error, ?ERROR_MAPPING).
 
 
--spec error_unload(Error) -> binary() when
+-spec error_serialize(Error) -> binary() when
       Error :: binary() | atom().
-error_unload(Error) ->
-    convert_value(unload, Error, ?ERROR_MAPPING).
+error_serialize(Error) ->
+    convert_value(serialize, Error, ?ERROR_MAPPING).
 
 
--spec dict_load(Dict)  -> map() when
+-spec dict_deserialize(Dict)  -> map() when
       Dict :: map().
-dict_load(Dict) ->
-    value_load(Dict).
+dict_deserialize(Dict) ->
+    value_deserialize(Dict).
 
 
--spec value_load(Value) -> map() | list() | number() | binary() when
+-spec value_deserialize(Value) -> map() | list() | number() | binary() when
       Value :: map() | list() | number() | binary() | atom().
-value_load(Map) when is_map (Map) ->
+value_deserialize(Map) when is_map (Map) ->
     PropList = maps:to_list(Map),
     Convert = fun({Key, Value}, NewMap) ->
                 NewKey = try_to_atom(Key),
-                NewValue = value_load(Value),
+                NewValue = value_deserialize(Value),
                 maps:put(NewKey, NewValue, NewMap)
               end,
     lists:foldl(Convert, #{}, PropList);
-value_load(Atom) when is_atom(Atom) ->
+value_deserialize(Atom) when is_atom(Atom) ->
     Atom;
-value_load(Binary) when is_binary(Binary) ->
+value_deserialize(Binary) when is_binary(Binary) ->
     try_to_atom(Binary);
-value_load(List) when is_list(List) ->
+value_deserialize(List) when is_list(List) ->
     Convert = fun(Element, NewList) ->
-                      NewElement = value_load(Element),
+                      NewElement = value_deserialize(Element),
                       [NewElement | NewList]
               end,
     lists:reverse(lists:foldl(Convert, [], List));
-value_load(N) when is_number(N) ->
+value_deserialize(N) when is_number(N) ->
     N.
 
 
@@ -366,15 +294,15 @@ try_to_atom(Binary) ->
     end.
 
 
--spec authmethod_load(Method) -> binary() | atom() when
+-spec authmethod_deserialize(Method) -> binary() | atom() when
       Method :: binary().
-authmethod_load(Method) ->
-    convert_value(load, Method, ?AUTH_METHOD_MAPPING).
+authmethod_deserialize(Method) ->
+    convert_value(deserialize, Method, ?AUTH_METHOD_MAPPING).
 
--spec authmethod_unload(Method) -> binary() when
+-spec authmethod_serialize(Method) -> binary() when
       Method :: atom().
-authmethod_unload(Method) ->
-    convert_value(unload, Method, ?AUTH_METHOD_MAPPING).
+authmethod_serialize(Method) ->
+    convert_value(serialize, Method, ?AUTH_METHOD_MAPPING).
 
 -spec request_type_to_atom(RequestType) -> atom() when
       RequestType :: pos_integer().
@@ -383,15 +311,14 @@ request_type_to_atom(RequestType) ->
     Atom.
 
 -spec atom_to_request_type(Atom) -> pos_integer() when
-      Atom :: atom().
+      Atom :: ct_msg_type().
 atom_to_request_type(Atom) ->
     {RequestType, Atom} = lists:keyfind(Atom, 2, ?REQUEST_TYPE_MAPPING),
     RequestType.
 
 
-
 -spec convert_value(Direction, Value, Mapping) ->  any() when
-      Direction :: load | unload,
+      Direction :: deserialize | serialize,
       Value :: any(),
       Mapping :: list().
 convert_value(Direction, Value, Mapping) ->
@@ -407,16 +334,16 @@ safe_convert_value(false, Default) ->
 
 
 -spec convert(Direction, Tuple) -> any() when
-      Direction :: load | unload,
+      Direction :: deserialize | serialize,
       Tuple :: {atom(), any()}.
-convert(load, {ErlVal, _}) ->
+convert(deserialize, {ErlVal, _}) ->
     ErlVal;
-convert(unload, {_, WampVal}) ->
+convert(serialize, {_, WampVal}) ->
     WampVal.
 
 -spec value_pos(Direction) -> 1 | 2 when
-      Direction :: load | unload.
-value_pos(load) ->
+      Direction :: deserialize | serialize.
+value_pos(deserialize) ->
     2;
-value_pos(unload) ->
+value_pos(serialize) ->
     1.
