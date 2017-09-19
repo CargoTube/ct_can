@@ -124,14 +124,14 @@ basic_convert_test_() ->
 
 deserialize_hello_json_test() ->
     WampMsg = <<"[1,\"test\",{\"roles\":{\"publisher\":{}}}]">>,
-    {[Hello], Buffer} = ct_msg:parse(WampMsg, json),
+    {[Hello], Buffer} = ct_msg:deserialize(WampMsg, json),
     ?assertEqual(<<>>, Buffer),
     ?assertEqual({hello, <<"test">>, #{roles => #{publisher => #{}}}}, Hello).
 
 deserialize_hello_msgpack_test() ->
     WampMsg = <<147,1,196,4,116,101,115,116,129,196,5,114,111,108,101,115,129,
                 196,9,112,117,98,108,105,115,104,101,114,128>>,
-    {[Hello], Buffer} = ct_msg:parse(WampMsg, msgpack),
+    {[Hello], Buffer} = ct_msg:deserialize(WampMsg, msgpack),
     ?assertEqual(<<>>, Buffer),
     ?assertEqual({hello, <<"test">>, #{roles => #{publisher => #{}}}}, Hello).
 
@@ -159,7 +159,7 @@ roundtrip_test(Encoding) ->
                                    io:format("in: ~p~n",[Erl]),
                                    Data = ct_msg:serialize(Erl, Encoding),
                                    io:format("data:~p~n",[Data]),
-                                   Result = ct_msg:parse(Data, Encoding),
+                                   Result = ct_msg:deserialize(Data, Encoding),
                                    io:format("out:~p~n",[Result]),
                                    Result
                            end,
@@ -212,7 +212,7 @@ basic_msgpack_test() ->
                 108,108,101,101,129,168,102,101,97,116,117,114,101,115,129,181,
                 99,97,108,108,101,114,95,105,100,101,110,116,105,102,105,99,97,
                 116,105,111,110,195>>,
-    {[Msg], <<>>} = ct_msg:parse(WampMsg, msgpack),
+    {[Msg], <<>>} = ct_msg:deserialize(WampMsg, msgpack),
     true = case Msg of
                {hello, <<"realm1">>, _} ->
                    true;
@@ -234,10 +234,10 @@ ping_pong_test() ->
     Ping2 = ct_msg:ping(Payload),
     Pong1 = <<2,0,0,1,13>>,
     Pong2 = ct_msg:pong(Payload),
-    {[PingMsg1],<<>>} = ct_msg:parse(Ping1, raw_json),
-    {[PingMsg2],<<>>} = ct_msg:parse(Ping2, raw_json),
-    {[PongMsg1],<<>>} = ct_msg:parse(Pong1, raw_json),
-    {[PongMsg2],<<>>} = ct_msg:parse(Pong2, raw_json),
+    {[PingMsg1],<<>>} = ct_msg:deserialize(Ping1, raw_json),
+    {[PingMsg2],<<>>} = ct_msg:deserialize(Ping2, raw_json),
+    {[PongMsg1],<<>>} = ct_msg:deserialize(Pong1, raw_json),
+    {[PongMsg2],<<>>} = ct_msg:deserialize(Pong2, raw_json),
 
     ?assertEqual({ping, <<13>>}, PingMsg1),
     ?assertEqual({ping, Payload}, PingMsg2),

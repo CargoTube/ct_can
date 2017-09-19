@@ -1,13 +1,20 @@
--module(ctmsg_serialize).
+-module(ct_msg_serialization).
 
 -export([
          serialize/2,
-         deserialize/2
+         deserialize/2,
+         ping/1,
+         pong/1
         ]).
 
 
 -define(JSONB_SEPARATOR, <<24>>).
 
+ping(Payload) ->
+    add_binary_frame(1, Payload).
+
+pong(Payload) ->
+    add_binary_frame(2, Payload).
 
 serialize(Message, Encoding) ->
   WampMsg = ct_msg_conversion:to_wamp(Message),
