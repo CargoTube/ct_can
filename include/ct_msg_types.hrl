@@ -61,27 +61,29 @@
 
 
 -type ct_msg() :: ct_msg_hello() |
-                    ct_msg_challenge() |
-                    ct_msg_authenticate() |
-                    ct_msg_welcome() |
-                    ct_msg_abort() |
-                    ct_msg_goodbye() |
-                    ct_msg_error() |
-                    ct_msg_publish() |
-                    ct_msg_publish() |
-                    ct_msg_published() |
-                    ct_msg_subscribe() |
-                    ct_msg_subscribed() |
-                    ct_msg_unsubscribe() |
-                    ct_msg_unsubscribed() |
-                    ct_msg_event() |
-                    ct_msg_call() |
-                    ct_msg_cancel() |
-                    ct_msg_result() |
-                    ct_msg_register() |
-                    ct_msg_registered() |
-                    ct_msg_unregister() |
-                    ct_msg_unregistered() |
-                    ct_msg_invocation() |
-                    ct_msg_interrupt() |
-                    ct_msg_yield().
+                  ct_msg_challenge() |
+                  ct_msg_authenticate() |
+                  ct_msg_welcome() |
+                  ct_msg_abort() |
+                  ct_msg_established().
+
+-type ct_msg_established() :: ct_msg_goodbye() |
+                              ct_msg_error() |
+                              ct_msg_publish() |
+                              ct_msg_publish() |
+                              ct_msg_published() |
+                              ct_msg_subscribe() |
+                              ct_msg_subscribed() |
+                              ct_msg_unsubscribe() |
+                              ct_msg_unsubscribed() |
+                              ct_msg_event() |
+                              ct_msg_call() |
+                              ct_msg_cancel() |
+                              ct_msg_result() |
+                              ct_msg_register() |
+                              ct_msg_registered() |
+                              ct_msg_unregister() |
+                              ct_msg_unregistered() |
+                              ct_msg_invocation() |
+                              ct_msg_interrupt() |
+                              ct_msg_yield().

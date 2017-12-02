@@ -12,3 +12,5 @@ relx
 .erlang.mk
 *.d
 *~
+*#
+.#*

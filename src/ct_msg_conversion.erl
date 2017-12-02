@@ -28,7 +28,8 @@ to_internal(WampMsg) ->
     ErlMsg = msg_to_internal(WampMsg),
     case ct_msg_validation:get_bad_fields(ErlMsg) of
         [] -> ErlMsg;
-        BadFields -> {bad_fields, BadFields}
+        BadFields ->
+            {bad_fields, BadFields, ErlMsg}
     end.
 
 

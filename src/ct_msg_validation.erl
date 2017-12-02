@@ -8,6 +8,7 @@
 -export([is_valid/1]).
 -export([get_bad_fields/1]).
 -include("ct_msg_types.hrl").
+-include("ct_msg_mapping.hrl").
 
 -export([
          is_valid_type/1,
@@ -163,6 +164,11 @@ is_valid_uri(Uri, Type) when is_binary(Uri) ->
                  end,
     {_, Result} = lists:foldl(CheckParts, {0, FirstValid}, UriParts),
     Result;
+is_valid_uri(Atom, reason_error) when is_atom(Atom) ->
+    case lists:keyfind(Atom, 1, ?ERROR_MAPPING) of
+        {Atom, _} -> true;
+        _ -> false
+    end;
 is_valid_uri(_Uri, _Type) ->
     false.
 
