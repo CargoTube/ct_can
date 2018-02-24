@@ -15,7 +15,7 @@
 -type ct_msg_hello() :: {hello, binary(), map()}.
 -type ct_msg_challenge() :: {challenge, ct_msg_authmetod(), map()}.
 -type ct_msg_authenticate() :: {authenticate, binary(), map()}.
--type ct_msg_welcome() :: {welcome, pos_integer(), map()}.
+-type ct_msg_welcome() :: {welcome, non_neg_integer(), map()}.
 -type ct_msg_abort() :: {abort, map(), ct_msg_error_uri()}.
 -type ct_msg_goodbye() :: {goodbye, map(), ct_msg_error_uri()}.
 -type ct_msg_error() :: {error, ct_msg_type(), pos_integer(), map(),
