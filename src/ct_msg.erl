@@ -8,6 +8,7 @@
 
 -export([
          get_type/1,
+         extract_session/1,
 
          deserialize/2,
          serialize/2,
@@ -20,6 +21,12 @@
 
 get_type(Msg) ->
     erlang:element(1, Msg).
+
+extract_session({welcome, SessionId, _}) ->
+    {ok, SessionId};
+extract_session(_) ->
+    {error, not_welcome}.
+
 
 deserialize(Buffer, Encoding) ->
     ct_msg_serialization:deserialize(Buffer, Encoding).
