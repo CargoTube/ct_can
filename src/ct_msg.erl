@@ -9,6 +9,7 @@
 -export([
          get_type/1,
          extract_session/1,
+         get_request_id/1,
 
          deserialize/2,
          serialize/2,
@@ -27,6 +28,12 @@ extract_session({welcome, SessionId, _}) ->
 extract_session(_) ->
     {error, not_welcome}.
 
+get_request_id(Message) ->
+    Type = get_type(Message),
+    ValidMessageTypes = [publish, subscribe, unsubscribe, call, register,
+                         unregister, invocation],
+    IsValidType = lists:member(Type, ValidMessageTypes),
+    maybe_get_request_id(IsValidType, Message).
 
 deserialize(Buffer, Encoding) ->
     ct_msg_serialization:deserialize(Buffer, Encoding).
@@ -39,3 +46,9 @@ ping(Payload) ->
 
 pong(Payload) ->
     ct_msg_serialization:pong(Payload).
+
+
+maybe_get_request_id(true, Message) ->
+    {ok, erlang:element(2, Message)};
+maybe_get_request_id(_, _) ->
+    {error, bad_message}.
