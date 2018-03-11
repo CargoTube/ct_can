@@ -30,8 +30,8 @@ error_test() ->
     Msg1 = ?ERROR(call, 123, #{}, <<"some.error">>),
     Msg2 = ?ERROR(call, 123, #{}, <<"some.error">>, [456]),
     Msg3 = ?ERROR(call, 123, #{}, <<"some.error">>, [], #{key => value}),
-    validate(Msg1, error),
-    validate(Msg2, error, 6),
+    validate(Msg1, error, 7),
+    validate(Msg2, error, 7),
     validate(Msg3, error, 7).
 
 publish_test() ->

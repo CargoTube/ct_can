@@ -125,9 +125,9 @@ error(RequestType, RequestId, Details, Error, Arguments, ArgumentsKw)
     {error, RequestType, RequestId, Details, Error, Arguments, ArgumentsKw};
 error(RequestType, RequestId, Details, Error, Arguments, _ArgumentsKw)
   when is_list(Arguments), length(Arguments) > 0 ->
-    {error, RequestType, RequestId, Details, Error, Arguments};
+    {error, RequestType, RequestId, Details, Error, Arguments, undefined};
 error(RequestType, RequestId, Details, Error, _Arguments, _ArgumentsKw) ->
-    {error, RequestType, RequestId, Details, Error}.
+    {error, RequestType, RequestId, Details, Error, undefined, undefined}.
 
 -spec publish(RequestId, Options, Topic) -> ct_msg_publish() when
       RequestId :: pos_integer(),
@@ -156,9 +156,9 @@ publish(RequestId, Options, Topic, Arguments, ArgumentsKw)
     {publish, RequestId, Options, Topic, Arguments, ArgumentsKw};
 publish(RequestId, Options, Topic, Arguments, _ArgumentsKw)
   when is_list(Arguments), length(Arguments) > 0 ->
-    {publish, RequestId, Options, Topic, Arguments};
+    {publish, RequestId, Options, Topic, Arguments, undefined};
 publish(RequestId, Options, Topic, _Arguments, _ArgumentsKw)  ->
-    {publish, RequestId, Options, Topic}.
+    {publish, RequestId, Options, Topic, undefined, undefined}.
 
 -spec published(RequestId, PublicationId) -> ct_msg_published() when
       RequestId :: pos_integer(),
@@ -218,9 +218,9 @@ event(SubscriptionId, PublicationId, Details, Arguments, ArgumentsKw)
     {event, SubscriptionId, PublicationId, Details, Arguments, ArgumentsKw};
 event(SubscriptionId, PublicationId, Details, Arguments, _ArgumentsKw)
   when is_list(Arguments), length(Arguments) > 0 ->
-    {event, SubscriptionId, PublicationId, Details, Arguments};
+    {event, SubscriptionId, PublicationId, Details, Arguments, undefined};
 event(SubscriptionId, PublicationId, Details, _Arguments, _ArgumentsKw) ->
-    {event, SubscriptionId, PublicationId, Details}.
+    {event, SubscriptionId, PublicationId, Details, undefined, undefined}.
 
 -spec call(RequestId, Options, Procedure) -> ct_msg_call() when
       RequestId :: pos_integer(),
@@ -250,9 +250,9 @@ call(RequestId, Options, Procedure, Arguments, ArgumentsKw)
     {call, RequestId, Options, Procedure, Arguments, ArgumentsKw};
 call(RequestId, Options, Procedure, Arguments, _ArgumentsKw)
   when is_list(Arguments), length(Arguments) > 0 ->
-    {call, RequestId, Options, Procedure, Arguments};
+    {call, RequestId, Options, Procedure, Arguments, undefined};
 call(RequestId, Options, Procedure, _Arguments, _ArgumentsKw) ->
-    {call, RequestId, Options, Procedure}.
+    {call, RequestId, Options, Procedure, undefined, undefined}.
 
 -spec cancel(RequestId, Options) -> ct_msg_cancel() when
       RequestId :: pos_integer(),
@@ -284,9 +284,9 @@ result(RequestId, Details, Arguments, ArgumentsKw)
     {result, RequestId, Details, Arguments, ArgumentsKw};
 result(RequestId, Details, Arguments, _ArgumentsKw)
   when is_list(Arguments), length(Arguments) > 0 ->
-    {result, RequestId, Details, Arguments};
+    {result, RequestId, Details, Arguments, undefined};
 result(RequestId, Details, _Arguments, _ArgumentsKw) ->
-    {result, RequestId, Details}.
+    {result, RequestId, Details, undefined, undefined}.
 
 -spec register(RequestId, Options, Procedure) -> ct_msg_register() when
       RequestId :: pos_integer(),
@@ -341,9 +341,9 @@ invocation(RequestId, RegistrationId, Details, Arguments, ArgumentsKw)
     {invocation, RequestId, RegistrationId, Details, Arguments, ArgumentsKw };
 invocation(RequestId, RegistrationId, Details, Arguments, _ArgumentsKw)
   when is_list(Arguments), length(Arguments) > 0 ->
-    {invocation, RequestId, RegistrationId, Details, Arguments };
+    {invocation, RequestId, RegistrationId, Details, Arguments , undefined};
 invocation(RequestId, RegistrationId, Details, _Arguments, _ArgumentsKw) ->
-    {invocation, RequestId, RegistrationId, Details }.
+    {invocation, RequestId, RegistrationId, Details , undefined, undefined}.
 
 -spec interrupt(RequestId, Options) -> ct_msg_interrupt() when
       RequestId :: pos_integer(),
@@ -374,6 +374,6 @@ yield(RequestId, Options, Arguments, ArgumentsKw)
     {yield, RequestId, Options, Arguments, ArgumentsKw};
 yield(RequestId, Options, Arguments, _ArgumentsKw)
   when is_list(Arguments), length(Arguments) > 0 ->
-    {yield, RequestId, Options, Arguments};
+    {yield, RequestId, Options, Arguments, undefined};
 yield(RequestId, Options, _Arguments, _ArgumentsKw) ->
-    {yield, RequestId, Options}.
+    {yield, RequestId, Options, undefined, undefined}.

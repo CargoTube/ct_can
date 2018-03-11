@@ -274,9 +274,11 @@ is_valid_dict(Dict) when is_map(Dict) ->
 is_valid_dict(_Dict) ->
     false.
 
+is_valid_arguments(undefined) -> true;
 is_valid_arguments(Arguments) when is_list(Arguments) -> true;
 is_valid_arguments(_) -> false.
 
+is_valid_argumentskw(undefined) -> true;
 is_valid_argumentskw(ArgumentsKw) when is_map(ArgumentsKw) -> true;
 is_valid_argumentskw(_) -> false.
 
