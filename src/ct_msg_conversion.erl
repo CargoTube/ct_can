@@ -49,20 +49,21 @@ msg_to_wamp({error, AtomType, RequestId, Details, Error, Arguments,
     WampType = atom_to_request_type(AtomType),
     [?ERROR, WampType, RequestId, Details, error_serialize(Error), Arguments,
      ArgumentsKw];
-msg_to_wamp({error, AtomType, RequestId, Details, Error, Arguments})
+msg_to_wamp({error, AtomType, RequestId, Details, Error, Arguments, undefined})
   when is_list(Arguments), length(Arguments) > 0 ->
     WampType = atom_to_request_type(AtomType),
     [?ERROR, WampType, RequestId, Details, error_serialize(Error), Arguments];
-msg_to_wamp({error, AtomType, RequestId, Details, Error}) ->
+msg_to_wamp({error, AtomType, RequestId, Details, Error, undefined,
+             undefined}) ->
     WampType = atom_to_request_type(AtomType),
     [?ERROR, WampType, RequestId, Details, error_serialize(Error)];
 msg_to_wamp({publish, RequestId, Options, Topic, Arguments, ArgumentsKw})
   when is_map(ArgumentsKw), map_size(ArgumentsKw) > 0 ->
     [?PUBLISH, RequestId, Options, Topic, Arguments, ArgumentsKw];
-msg_to_wamp({publish, RequestId, Options, Topic, Arguments})
+msg_to_wamp({publish, RequestId, Options, Topic, Arguments, undefined})
   when is_list(Arguments), length(Arguments) > 0 ->
     [?PUBLISH, RequestId, Options, Topic, Arguments];
-msg_to_wamp({publish, RequestId, Options, Topic}) ->
+msg_to_wamp({publish, RequestId, Options, Topic, undefined, undefined}) ->
     [?PUBLISH, RequestId, Options, Topic];
 msg_to_wamp({published, RequestId, PublicationId}) ->
     [?PUBLISHED, RequestId, PublicationId];
@@ -78,26 +79,27 @@ msg_to_wamp({event, SubscriptionId, PublicationId, Details, Arguments,
              ArgumentsKw})
   when is_map(ArgumentsKw), map_size(ArgumentsKw) > 0 ->
     [?EVENT, SubscriptionId, PublicationId, Details, Arguments, ArgumentsKw];
-msg_to_wamp({event, SubscriptionId, PublicationId, Details, Arguments})
-  when is_list(Arguments), length(Arguments) > 0 ->
+msg_to_wamp({event, SubscriptionId, PublicationId, Details, Arguments,
+             undefined}) when is_list(Arguments), length(Arguments) > 0 ->
     [?EVENT, SubscriptionId, PublicationId, Details, Arguments];
-msg_to_wamp({event, SubscriptionId, PublicationId, Details}) ->
+msg_to_wamp({event, SubscriptionId, PublicationId, Details, undefined,
+             undefined}) ->
     [?EVENT, SubscriptionId, PublicationId, Details];
 msg_to_wamp({call, RequestId, Options, Procedure, Arguments, ArgumentsKw} )
   when is_map(ArgumentsKw), map_size(ArgumentsKw) > 0 ->
     [?CALL, RequestId, Options, Procedure, Arguments, ArgumentsKw];
-msg_to_wamp({call, RequestId, Options, Procedure, Arguments})
+msg_to_wamp({call, RequestId, Options, Procedure, Arguments, undefined})
   when is_list(Arguments), length(Arguments) > 0 ->
     [?CALL, RequestId, Options, Procedure, Arguments];
-msg_to_wamp({call, RequestId, Options, Procedure}) ->
+msg_to_wamp({call, RequestId, Options, Procedure, undefined, undefined}) ->
     [?CALL, RequestId, Options, Procedure];
 msg_to_wamp({result, RequestId, Details, Arguments, ArgumentsKw})
   when is_map(ArgumentsKw), map_size(ArgumentsKw) > 0 ->
     [?RESULT, RequestId, Details, Arguments, ArgumentsKw];
-msg_to_wamp({result, RequestId, Details, Arguments})
+msg_to_wamp({result, RequestId, Details, Arguments, undefined})
   when is_list(Arguments), length(Arguments) > 0 ->
     [?RESULT, RequestId, Details, Arguments];
-msg_to_wamp({result, RequestId, Details}) ->
+msg_to_wamp({result, RequestId, Details, undefined, undefined}) ->
     [?RESULT, RequestId, Details];
 msg_to_wamp({register, RequestId, Options, Procedure}) ->
     [?REGISTER, RequestId, Options, Procedure];
@@ -111,18 +113,20 @@ msg_to_wamp({invocation, RequestId, RegistrationId, Details, Arguments,
              ArgumentsKw})
   when is_map(ArgumentsKw), map_size(ArgumentsKw) > 0 ->
     [?INVOCATION, RequestId, RegistrationId, Details, Arguments, ArgumentsKw];
-msg_to_wamp({invocation, RequestId, RegistrationId, Details, Arguments})
+msg_to_wamp({invocation, RequestId, RegistrationId, Details, Arguments,
+             undefined})
   when is_list(Arguments), length(Arguments) > 0 ->
     [?INVOCATION, RequestId, RegistrationId, Details, Arguments];
-msg_to_wamp({invocation, RequestId, RegistrationId, Details}) ->
+msg_to_wamp({invocation, RequestId, RegistrationId, Details, undefined,
+             undefined}) ->
     [?INVOCATION, RequestId, RegistrationId, Details];
 msg_to_wamp({yield, RequestId, Options, Arguments, ArgumentsKw})
   when is_map(ArgumentsKw), map_size(ArgumentsKw) > 0 ->
     [?YIELD, RequestId, Options, Arguments, ArgumentsKw];
-msg_to_wamp({yield, RequestId, Options, Arguments})
+msg_to_wamp({yield, RequestId, Options, Arguments, undefined})
   when is_list(Arguments), length(Arguments) > 0 ->
     [?YIELD, RequestId, Options, Arguments];
-msg_to_wamp({yield, RequestId, Options}) ->
+msg_to_wamp({yield, RequestId, Options, undefined, undefined}) ->
     [?YIELD, RequestId, Options];
 %% ADVANCED MESSAGES
 msg_to_wamp({challenge, AuthMethod, Extra}) ->
@@ -156,14 +160,17 @@ msg_to_internal([?ERROR, RequestType, RequestId, Details, Error, Arguments,
 msg_to_internal([?ERROR, RequestType, RequestId, Details, Error, Arguments]) ->
     ErlType = request_type_to_atom(RequestType),
     {error, ErlType, RequestId, Details, try_error_deserialize(Error),
-     Arguments};
+     Arguments, undefined};
 msg_to_internal([?ERROR, RequestType, RequestId, Details, Error]) ->
     ErlType = request_type_to_atom(RequestType),
-    {error, ErlType, RequestId, Details, try_error_deserialize(Error)};
+    {error, ErlType, RequestId, Details, try_error_deserialize(Error),
+     undefined, undefined};
 msg_to_internal([?PUBLISH, RequestId, Options, Topic]) ->
-    {publish,  RequestId, dict_deserialize(Options), Topic};
+    {publish,  RequestId, dict_deserialize(Options), Topic, undefined,
+     undefined};
 msg_to_internal([?PUBLISH, RequestId, Options, Topic, Arguments]) ->
-    {publish,  RequestId, dict_deserialize(Options), Topic, Arguments};
+    {publish,  RequestId, dict_deserialize(Options), Topic, Arguments,
+     undefined};
 msg_to_internal([?PUBLISH, RequestId, Options, Topic, Arguments, ArgumentsKw])->
     {publish,  RequestId, dict_deserialize(Options), Topic, Arguments,
      ArgumentsKw};
@@ -178,26 +185,29 @@ msg_to_internal([?UNSUBSCRIBE, RequestId, SubscriptionId]) ->
 msg_to_internal([?UNSUBSCRIBED, RequestId]) ->
     {unsubscribed, RequestId};
 msg_to_internal([?EVENT, SubscriptionId, PublicationId, Details]) ->
-    {event, SubscriptionId, PublicationId, dict_deserialize(Details)};
+    {event, SubscriptionId, PublicationId, dict_deserialize(Details),
+     undefined, undefined};
 msg_to_internal([?EVENT, SubscriptionId, PublicationId, Details, Arguments]) ->
     {event, SubscriptionId, PublicationId, dict_deserialize(Details),
-     Arguments};
+     Arguments, undefined};
 msg_to_internal([?EVENT, SubscriptionId, PublicationId, Details, Arguments,
         ArgumentsKw]) ->
     {event, SubscriptionId, PublicationId, dict_deserialize(Details), Arguments,
      ArgumentsKw};
 msg_to_internal([?CALL, RequestId, Options, Procedure]) ->
-    {call, RequestId, dict_deserialize(Options), Procedure};
+    {call, RequestId, dict_deserialize(Options), Procedure, undefined,
+     undefined};
 msg_to_internal([?CALL, RequestId, Options, Procedure, Arguments]) ->
-    {call, RequestId, dict_deserialize(Options), Procedure, Arguments};
+    {call, RequestId, dict_deserialize(Options), Procedure, Arguments,
+     undefined};
 msg_to_internal([?CALL, RequestId, Options, Procedure, Arguments,
                  ArgumentsKw]) ->
     {call, RequestId, dict_deserialize(Options), Procedure, Arguments,
      ArgumentsKw};
 msg_to_internal([?RESULT, RequestId, Details]) ->
-    {result, RequestId, dict_deserialize(Details)};
+    {result, RequestId, dict_deserialize(Details), undefined, undefined};
 msg_to_internal([?RESULT, RequestId, Details, Arguments]) ->
-    {result, RequestId, dict_deserialize(Details), Arguments};
+    {result, RequestId, dict_deserialize(Details), Arguments, undefined};
 msg_to_internal([?RESULT, RequestId, Details, Arguments, ArgumentsKw]) ->
     {result, RequestId, dict_deserialize(Details), Arguments, ArgumentsKw};
 msg_to_internal([?REGISTER, RequestId, Options, Procedure]) ->
@@ -209,18 +219,19 @@ msg_to_internal([?UNREGISTER, RequestId, RegistrationId]) ->
 msg_to_internal([?UNREGISTERED, RequestId]) ->
     {unregistered, RequestId};
 msg_to_internal([?INVOCATION, RequestId, RegistrationId, Details]) ->
-    {invocation, RequestId, RegistrationId, dict_deserialize(Details)};
+    {invocation, RequestId, RegistrationId, dict_deserialize(Details),
+     undefined, undefined};
 msg_to_internal([?INVOCATION, RequestId, RegistrationId, Details, Arguments]) ->
     {invocation, RequestId, RegistrationId, dict_deserialize(Details),
-      Arguments};
+      Arguments, undefined};
 msg_to_internal([?INVOCATION, RequestId, RegistrationId, Details, Arguments,
             ArgumentsKw]) ->
     {invocation, RequestId, RegistrationId, dict_deserialize(Details),
      Arguments, ArgumentsKw};
 msg_to_internal([?YIELD, RequestId, Options]) ->
-    {yield, RequestId, dict_deserialize(Options)};
+    {yield, RequestId, dict_deserialize(Options), undefined, undefined};
 msg_to_internal([?YIELD, RequestId, Options, Arguments]) ->
-    {yield, RequestId, dict_deserialize(Options), Arguments};
+    {yield, RequestId, dict_deserialize(Options), Arguments, undefined};
 msg_to_internal([?YIELD, RequestId, Options, Arguments, ArgumentsKw]) ->
     {yield, RequestId, dict_deserialize(Options), Arguments, ArgumentsKw};
 %% ADVANCED MESSAGES
