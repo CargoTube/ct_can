@@ -74,15 +74,6 @@ maybe_next_field(true, Fields, MustKeys, MayKeys) ->
 maybe_next_field(false, _, _, _) ->
     false.
 
-%% update_uri_field(false, _) ->
-%%     [];
-%% update_uri_field(true, #{type := register} = Msg) ->
-%%     Procedure = maps:get(procedure, Msg),
-%%     [ {reg_procedure, Procedure } |
-%%       maps:to_list(maps:without([procedure], Msg)) ];
-%% update_uri_field(true, Msg) ->
-%%       maps:to_list(Msg).
-
 
 
 is_valid_entry({realm, Realm}) ->
@@ -92,7 +83,7 @@ is_valid_entry({topic, Topic}) ->
 is_valid_entry({reg_procedure, Procedure}) ->
     is_valid_uri(Procedure, register);
 is_valid_entry({procedure, Procedure}) ->
-    is_valid_uri(Procedure);
+    is_valid_uri(Procedure, procedure);
 is_valid_entry({session_id, Id}) ->
     is_valid_id(Id);
 is_valid_entry({request_id, Id}) ->
@@ -179,6 +170,8 @@ is_valid_uri_beginning([<<"cargotube">>| _], _) ->
 is_valid_uri_beginning([<<"cargo-tube">>| _], _) ->
     false;
 is_valid_uri_beginning([<<"wamp">>| _], reason_error) ->
+    true;
+is_valid_uri_beginning([<<"wamp">>| _], procedure) ->
     true;
 is_valid_uri_beginning([<<"wamp">>| _], _) ->
     false;
