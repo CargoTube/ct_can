@@ -14,6 +14,7 @@
          is_valid_type/1,
          is_valid_request_type/1,
          is_valid_uri/1,
+         is_valid_uri/2,
          is_valid_id/1,
          is_valid_dict/1,
          is_valid_arguments/1,
@@ -79,9 +80,11 @@ maybe_next_field(false, _, _, _) ->
 is_valid_entry({realm, Realm}) ->
     is_valid_uri(Realm);
 is_valid_entry({topic, Topic}) ->
-    is_valid_uri(Topic);
+    is_valid_uri(Topic, topic);
+is_valid_entry({pub_topic, Topic}) ->
+    is_valid_uri(Topic, pub_topic);
 is_valid_entry({reg_procedure, Procedure}) ->
-    is_valid_uri(Procedure, register);
+    is_valid_uri(Procedure, reg_procedure);
 is_valid_entry({procedure, Procedure}) ->
     is_valid_uri(Procedure, procedure);
 is_valid_entry({session_id, Id}) ->
@@ -142,18 +145,18 @@ is_valid_uri(Uri, Type) when is_binary(Uri) ->
                     (Char, true) ->
                          is_valid_uri_part_character(Char)
                  end,
-    CheckParts = fun(_Part, {_, false}) ->
-                         false;
-                    (<<"">>, {0, true}) ->
-                         {1, Type == register};
-                    (<<"">>, {_, true}) ->
-                         false;
-                    (Part, {Num, true}) ->
+    CheckParts = fun(_Part, {HadEmpty, false}) ->
+                         {HadEmpty, false};
+                    (<<"">>, {false, true}) ->
+                         {true, Type == register};
+                    (<<"">>, {true, true}) ->
+                         {true, false};
+                    (Part, {HadEmpty, true}) ->
                          Chars = binary_to_list(Part),
                          Boolean = lists:foldl(CheckChars, true, Chars),
-                         {Num, Boolean}
+                         {HadEmpty, Boolean}
                  end,
-    {_, Result} = lists:foldl(CheckParts, {0, FirstValid}, UriParts),
+    {_, Result} = lists:foldl(CheckParts, {false, FirstValid}, UriParts),
     Result;
 is_valid_uri(Atom, reason_error) when is_atom(Atom) ->
     case lists:keyfind(Atom, 1, ?ERROR_MAPPING) of
@@ -172,6 +175,8 @@ is_valid_uri_beginning([<<"cargo-tube">>| _], _) ->
 is_valid_uri_beginning([<<"wamp">>| _], reason_error) ->
     true;
 is_valid_uri_beginning([<<"wamp">>| _], procedure) ->
+    true;
+is_valid_uri_beginning([<<"wamp">>| _], topic) ->
     true;
 is_valid_uri_beginning([<<"wamp">>| _], _) ->
     false;
@@ -282,7 +287,7 @@ is_valid_argumentskw(_) -> false.
                        {goodbye, [details, reason], []},
                        {error, [request_type, request_id, details, error],
                         [arguments, arguments_kw]},
-                       {publish, [request_id, options, topic],
+                       {publish, [request_id, options, pub_topic],
                         [arguments, arguments_kw]},
                        {published, [request_id, publication_id], []},
                        {subscribe, [request_id, options, topic], []},

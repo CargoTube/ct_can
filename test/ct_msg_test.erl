@@ -14,16 +14,18 @@
              {welcome, 234, #{}}},
             {[?ABORT, #{}, Error],
              {abort, #{}, Error}},
-            {[?PUBLISH, 456, #{}, Topic],
-             {publish, 456, #{}, Topic, undefined, undefined} },
-            {[?PUBLISH, 456, #{}, Topic, Arg],
-             {publish, 456, #{}, Topic, Arg, undefined }},
-            {[?PUBLISH, 456, #{}, Topic, [], ArgKw ],
-             {publish, 456, #{}, Topic,  [], ArgKw } },
+            {[?PUBLISH, 456, #{}, PubTopic],
+             {publish, 456, #{}, PubTopic, undefined, undefined} },
+            {[?PUBLISH, 456, #{}, PubTopic, Arg],
+             {publish, 456, #{}, PubTopic, Arg, undefined }},
+            {[?PUBLISH, 456, #{}, PubTopic, [], ArgKw ],
+             {publish, 456, #{}, PubTopic,  [], ArgKw } },
             {[?PUBLISHED, 123, 456],
              {published, 123, 456}},
             {[?SUBSCRIBE, 123, #{}, Topic],
              {subscribe, 123, #{}, Topic}},
+            {[?SUBSCRIBE, 123, #{}, MetaTopic],
+             {subscribe, 123, #{}, MetaTopic}},
             {[?SUBSCRIBED, 123, 456],
              {subscribed, 123, 456}},
             {[?UNSUBSCRIBE, 123, 456],
@@ -42,6 +44,12 @@
              {call, 123, #{}, Procedure, Arg, undefined}},
             {[?CALL, 123, #{}, Procedure, [], ArgKw],
              {call, 123, #{}, Procedure, [], ArgKw}},
+            {[?CALL, 123, #{}, MetaProcedure],
+             {call, 123, #{}, MetaProcedure, undefined, undefined}},
+            {[?CALL, 123, #{}, MetaProcedure, Arg],
+             {call, 123, #{}, MetaProcedure, Arg, undefined}},
+            {[?CALL, 123, #{}, MetaProcedure, [], ArgKw],
+             {call, 123, #{}, MetaProcedure, [], ArgKw}},
             {[?CANCEL, 123, #{}],
              {cancel, 123, #{}} },
             {[?INTERRUPT, 123, #{}],
@@ -52,8 +60,8 @@
              {result, 123, #{}, Arg, undefined}},
             {[?RESULT, 123, #{}, [], ArgKw],
              {result, 123, #{}, [], ArgKw}},
-            {[?REGISTER, 123, #{}, Procedure],
-             {register, 123, #{}, Procedure}},
+            {[?REGISTER, 123, #{}, RegProcedure],
+             {register, 123, #{}, RegProcedure}},
             {[?REGISTERED, 123, 456],
              {registered, 123, 456}},
             {[?UNREGISTER, 123, 456],
@@ -120,6 +128,11 @@ basic_convert_test_() ->
     basic_test(ConvertToErl) ++ basic_test(ConvertToWamp).
 
 
+uri_test() ->
+    ?assertEqual(true, ct_msg_validation:is_valid_uri(<<"wamp.session.on_join">>, topic)),
+    ?assertEqual(true, ct_msg_validation:is_valid_uri(<<"wamp.session.count">>, procedure)),
+    ok.
+
 
 
 deserialize_hello_json_test() ->
@@ -153,7 +166,7 @@ roundtrip_erlbin_test_() ->
     roundtrip_test(raw_erlbin).
 
 roundtrip_test(Encoding) ->
-    Roundrip = fun({_, Erl}, List) ->
+    Roundtrip = fun({_, Erl}, List) ->
                        F = fun() ->
                                    io:format("roundtrip ~p~n",[Encoding]),
                                    io:format("in: ~p~n",[Erl]),
@@ -165,7 +178,8 @@ roundtrip_test(Encoding) ->
                            end,
                        [?_assertEqual({[Erl],<<>>}, F()) | List]
                end,
-    basic_test(Roundrip).
+    basic_test(Roundtrip).
+
 
 
 basic_test(Convert) ->
@@ -173,9 +187,13 @@ basic_test(Convert) ->
     Signature = <<"very secret">>,
     Error = <<"wamp.error.test">>,
     Topic = <<"topic.test">>,
+    MetaTopic = <<"wamp.session.on_join">>,
+    PubTopic = <<"topic.test">>,
     Arg = [1,2,3],
     ArgKw = #{<<"key">> => <<"value">>},
     Procedure = <<"test.procedure">>,
+    MetaProcedure = <<"wamp.session.count">>,
+    RegProcedure = <<"test.procedure">>,
 
     ToError =fun({WampType, ErlType}, List) ->
                      [{[?ERROR, WampType, 123, #{}, Error],
@@ -190,6 +208,7 @@ basic_test(Convert) ->
                                         ?TYPE_MAPPING)),
 
     lists:reverse(lists:foldl(Convert, [], AllMsgs)).
+
 
 basic_msgpack_test() ->
     WampMsg = <<147,1,166,114,101,97,108,109,49,130,165,97,103,101,110,116,175,
