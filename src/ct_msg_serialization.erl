@@ -104,7 +104,6 @@ deserialize_binary(Buffer, Messages, Enc) ->
     deserialize_binary_msg(Msg0, Messages, Enc, NewBuffer).
 
 
-
 extract_bin_msg(<<LenType:32/unsigned-integer-big, Data/binary>> = Buffer) ->
     <<Type:8, Len:24>> = <<LenType:32>>,
     maybe_return_msg(Type, Len, Data, Buffer);
@@ -112,7 +111,7 @@ extract_bin_msg(Buffer) ->
     {none, Buffer}.
 
 maybe_return_msg(Type, Len, Data, _Buffer)
-  when is_integer(Len), byte_size(Data) =< Len ->
+  when is_integer(Len), byte_size(Data) >= Len ->
     <<Payload:Len/binary, NewBuffer/binary>> = Data,
     convert_binary_type(Type, Payload, NewBuffer);
 maybe_return_msg(_, _, _, Buffer) ->
