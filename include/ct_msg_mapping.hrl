@@ -16,6 +16,7 @@
           {no_such_realm, <<"wamp.error.no_such_realm">>},
           {no_such_registration, <<"wamp.error.no_such_registration">>},
           {no_such_role, <<"wamp.error.no_such_role">>},
+          {no_such_session, <<"wamp.error.no_such_session">>},
           {no_such_subscription, <<"wamp.error.no_such_subscription">>},
           {not_authorized, <<"wamp.error.not_authorized">>},
           {option_disclose_me, <<"wamp.error.option_disallowed.disclose_me">>},
