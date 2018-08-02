@@ -10,7 +10,11 @@
 
 
 %% API
--export([to_wamp/1, to_internal/1]).
+-export([to_wamp/1,
+         to_internal/1,
+
+         value_to_internal/1
+        ]).
 
 
 %% TODO:  heartbeat
@@ -269,30 +273,30 @@ error_serialize(Error) ->
 -spec dict_deserialize(Dict)  -> map() when
       Dict :: map().
 dict_deserialize(Dict) ->
-    value_deserialize(Dict).
+    value_to_internal(Dict).
 
 
--spec value_deserialize(Value) -> map() | list() | number() | binary() when
+-spec value_to_internal(Value) -> map() | list() | number() | binary() when
       Value :: map() | list() | number() | binary() | atom().
-value_deserialize(Map) when is_map (Map) ->
+value_to_internal(Map) when is_map (Map) ->
     PropList = maps:to_list(Map),
     Convert = fun({Key, Value}, NewMap) ->
                 NewKey = try_to_atom(Key),
-                NewValue = value_deserialize(Value),
+                NewValue = value_to_internal(Value),
                 maps:put(NewKey, NewValue, NewMap)
               end,
     lists:foldl(Convert, #{}, PropList);
-value_deserialize(Atom) when is_atom(Atom) ->
+value_to_internal(Atom) when is_atom(Atom) ->
     Atom;
-value_deserialize(Binary) when is_binary(Binary) ->
+value_to_internal(Binary) when is_binary(Binary) ->
     try_to_atom(Binary);
-value_deserialize(List) when is_list(List) ->
+value_to_internal(List) when is_list(List) ->
     Convert = fun(Element, NewList) ->
-                      NewElement = value_deserialize(Element),
+                      NewElement = value_to_internal(Element),
                       [NewElement | NewList]
               end,
     lists:reverse(lists:foldl(Convert, [], List));
-value_deserialize(N) when is_number(N) ->
+value_to_internal(N) when is_number(N) ->
     N.
 
 
