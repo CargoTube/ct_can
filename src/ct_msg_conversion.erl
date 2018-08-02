@@ -198,12 +198,12 @@ msg_to_internal([?CALL, RequestId, Options, Procedure]) ->
     {call, RequestId, dict_deserialize(Options), Procedure, undefined,
      undefined};
 msg_to_internal([?CALL, RequestId, Options, Procedure, Arguments]) ->
-    {call, RequestId, dict_deserialize(Options), Procedure, Arguments,
-     undefined};
+    {call, RequestId, dict_deserialize(Options), Procedure,
+     value_deserialize(Arguments), undefined};
 msg_to_internal([?CALL, RequestId, Options, Procedure, Arguments,
                  ArgumentsKw]) ->
-    {call, RequestId, dict_deserialize(Options), Procedure, Arguments,
-     ArgumentsKw};
+    {call, RequestId, dict_deserialize(Options), Procedure,
+     value_deserialize(Arguments), value_deserialize(ArgumentsKw)};
 msg_to_internal([?RESULT, RequestId, Details]) ->
     {result, RequestId, dict_deserialize(Details), undefined, undefined};
 msg_to_internal([?RESULT, RequestId, Details, Arguments]) ->
