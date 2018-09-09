@@ -21,6 +21,8 @@ serialize(Message, Encoding) ->
   serialize_message(WampMsg, Encoding).
 
 
+deserialize(Buffer, none) ->
+	Buffer;
 deserialize(Buffer, Enc)
   when Enc == raw_erlbin; Enc == raw_msgpack; Enc == msgpack_batched;
        Enc == raw_json->
@@ -38,6 +40,8 @@ deserialize(Buffer, json_batched) ->
 
 
 
+serialize_message(Msg, none) ->
+  Msg;
 serialize_message(Msg, msgpack) ->
   msgpack:pack(Msg, [{pack_str, from_binary}]);
 serialize_message(Msg, msgpack_batched) ->
